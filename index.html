@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Austin Eats">
+<meta name="theme-color" content="#1C1A17">
+<title>Austin Eats</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --burnt: #C4501A;
+  --cream: #F5EFE4;
+  --dark: #1C1A17;
+  --mid: #5C4A32;
+  --light: #EDE5D8;
+  --gold: #B8902A;
+  --card-bg: #FFFFFF;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  background: var(--cream);
+  color: var(--dark);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--dark);
+  padding: calc(16px + var(--safe-top)) 20px 16px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.app-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.9rem;
+  color: var(--cream);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.app-header h1 em { color: var(--burnt); font-style: italic; }
+
+.spot-count {
+  font-size: 0.65rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(245,239,228,0.4);
+  margin-top: 4px;
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--dark);
+  border-bottom: 2px solid var(--burnt);
+  padding: 0 0 10px;
+}
+
+.filter-row {
+  display: flex;
+  overflow-x: auto;
+  gap: 5px;
+  padding: 8px 14px 0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+
+.filter-label {
+  font-size: 0.55rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(245,239,228,0.35);
+  padding: 0 14px;
+  margin-top: 6px;
+}
+
+.pill {
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(245,239,228,0.55);
+  background: transparent;
+  border: 1px solid rgba(245,239,228,0.18);
+  border-radius: 20px;
+  padding: 5px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.pill:active { opacity: 0.7; }
+.pill.active {
+  background: var(--burnt);
+  border-color: var(--burnt);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* ── RESULTS BAR ── */
+.results-bar {
+  display: none;
+  background: var(--burnt);
+  color: white;
+  font-size: 0.72rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  text-align: center;
+}
+.results-bar.visible { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.clear-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── SECTIONS ── */
+.section {
+  padding: 24px 14px 8px;
+}
+.section.hidden { display: none; }
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--dark);
+  margin-bottom: 14px;
+}
+.section-emoji { font-size: 1.4rem; }
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.section-sub {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-top: 1px;
+}
+
+/* ── CARDS ── */
+.cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+
+.card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(28,26,23,0.09);
+  transition: transform 0.15s;
+  position: relative;
+}
+.card:active { transform: scale(0.985); }
+.card.hidden { display: none !important; }
+.card.featured { border: 1.5px solid var(--gold); }
+
+.card-top-bar { height: 4px; }
+.card-top-bar.bbq { background: var(--burnt); }
+.card-top-bar.mexican { background: #D4891A; }
+.card-top-bar.southern { background: #3D5A3E; }
+.card-top-bar.pizza { background: #C41A1A; }
+.card-top-bar.asian { background: #8B3A8B; }
+.card-top-bar.mediterranean { background: #1A7AC4; }
+.card-top-bar.seafood { background: #0E7A8A; }
+.card-top-bar.burgers { background: #E85D04; }
+.card-top-bar.caribbean { background: #2E8B57; }
+.card-top-bar.steakhouse { background: linear-gradient(90deg, #8B1A1A, #B8902A); }
+.card-top-bar.cafe { background: #5C3A1E; }
+.card-top-bar.sweets { background: var(--gold); }
+.card-top-bar.cocktails { background: #4A1570; }
+.card-top-bar.default { background: var(--mid); }
+
+.card-inner { padding: 12px 14px 14px; }
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.card-cuisine-label {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--burnt);
+  font-weight: 500;
+}
+
+.card-price {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--mid);
+  letter-spacing: 0.5px;
+}
+
+.card-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tag {
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.tag-indoor { background: #E8F0FE; color: #1A4A8A; }
+.tag-outdoor { background: #E8F5E9; color: #1B5E20; }
+.tag-both { background: #FFF3E0; color: #7A3800; }
+.tag-casual { background: #F3E5F5; color: #4A1570; }
+.tag-fancy { background: #FCE4EC; color: #880E4F; }
+.tag-truck { background: #E0F7FA; color: #004D61; }
+
+.must-order {
+  background: var(--cream);
+  border-left: 3px solid var(--burnt);
+  padding: 8px 10px;
+  border-radius: 0 4px 4px 0;
+  margin-top: 2px;
+}
+.must-label {
+  font-size: 0.58rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--burnt);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.must-text {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--dark);
+}
+
+.card-notes {
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--light);
+}
+
+/* ── NEIGHBORHOODS ── */
+.nbhd-section {
+  background: var(--dark);
+  padding: 24px 14px calc(24px + var(--safe-bottom));
+  margin-top: 8px;
+}
+.nbhd-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid rgba(245,239,228,0.15);
+  margin-bottom: 14px;
+}
+.nbhd-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--cream);
+}
+.nbhd-sub {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(245,239,228,0.4);
+}
+.nbhd-cards { display: flex; flex-direction: column; gap: 8px; }
+.nbhd-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.nbhd-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--burnt);
+  margin-bottom: 5px;
+}
+.nbhd-desc {
+  font-size: 0.8rem;
+  color: rgba(245,239,228,0.7);
+  line-height: 1.5;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 20px 16px calc(20px + var(--safe-bottom));
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--mid);
+  background: var(--light);
+}
+
+.divider { border: none; border-top: 1px solid var(--light); margin: 0; }
+.divider.hidden { display: none; }
+
+/* ── NO RESULTS ── */
+.no-results {
+  display: none;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--mid);
+}
+.no-results.visible { display: block; }
+.no-results-emoji { font-size: 2.5rem; margin-bottom: 12px; }
+.no-results p { font-size: 0.85rem; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>Austin <em>Eats</em></h1>
+  <div class="spot-count" id="spot-count">69 spots</div>
+</header>
+
+<div class="filter-bar">
+  <div class="filter-label">Meal</div>
+  <div class="filter-row" id="meal-row">
+    <button class="pill active" data-filter="meal" data-value="all">All</button>
+    <button class="pill" data-filter="meal" data-value="breakfast">☀️ Breakfast</button>
+    <button class="pill" data-filter="meal" data-value="lunch">🌮 Lunch</button>
+    <button class="pill" data-filter="meal" data-value="dinner">🍽️ Dinner</button>
+    <button class="pill" data-filter="meal" data-value="brunch">🥂 Brunch</button>
+    <button class="pill" data-filter="meal" data-value="sweets">🍩 Sweets</button>
+    <button class="pill" data-filter="meal" data-value="bars">🍸 Bars</button>
+  </div>
+
+  <div class="filter-label">Price</div>
+  <div class="filter-row" id="price-row">
+    <button class="pill active" data-filter="price" data-value="all">All</button>
+    <button class="pill" data-filter="price" data-value="1">$ Cheap</button>
+    <button class="pill" data-filter="price" data-value="2">$$ Mid</button>
+    <button class="pill" data-filter="price" data-value="3">$$$ Splurge</button>
+    <button class="pill" data-filter="price" data-value="4">$$$$ Special</button>
+  </div>
+
+  <div class="filter-label">Cuisine</div>
+  <div class="filter-row" id="cuisine-row">
+    <button class="pill active" data-filter="cuisine" data-value="all">All</button>
+    <button class="pill" data-filter="cuisine" data-value="bbq">🔥 BBQ</button>
+    <button class="pill" data-filter="cuisine" data-value="mexican">🌮 Mexican</button>
+    <button class="pill" data-filter="cuisine" data-value="burgers">🍔 Burgers</button>
+    <button class="pill" data-filter="cuisine" data-value="pizza">🍕 Pizza</button>
+    <button class="pill" data-filter="cuisine" data-value="seafood">🐟 Seafood</button>
+    <button class="pill" data-filter="cuisine" data-value="southern">🍗 Southern</button>
+    <button class="pill" data-filter="cuisine" data-value="mediterranean">🫒 Med</button>
+    <button class="pill" data-filter="cuisine" data-value="asian">🍜 Asian</button>
+    <button class="pill" data-filter="cuisine" data-value="caribbean">🌴 Caribbean</button>
+    <button class="pill" data-filter="cuisine" data-value="steakhouse">🥩 Steak</button>
+    <button class="pill" data-filter="cuisine" data-value="cafe">☕ Café</button>
+    <button class="pill" data-filter="cuisine" data-value="sweets">🍩 Sweets</button>
+    <button class="pill" data-filter="cuisine" data-value="cocktails">🍸 Cocktails</button>
+  </div>
+</div>
+
+<div class="results-bar" id="results-bar">
+  <span id="results-text">Showing 0 spots</span>
+  <button class="clear-btn" onclick="resetFilters()">Clear</button>
+</div>
+
+<div id="main-content">
+
+<!-- BREAKFAST -->
+<div class="section" id="sec-breakfast" data-section="breakfast">
+  <div class="section-heading">
+    <span class="section-emoji">☀️</span>
+    <div><div class="section-title">Breakfast</div><div class="section-sub">Morning fuel, Austin style</div></div>
+  </div>
+  <div class="cards" id="cards-breakfast"></div>
+</div>
+<hr class="divider" id="div-breakfast">
+
+<!-- LUNCH -->
+<div class="section" id="sec-lunch" data-section="lunch">
+  <div class="section-heading">
+    <span class="section-emoji">🌮</span>
+    <div><div class="section-title">Lunch</div><div class="section-sub">BBQ, tacos, trucks & more</div></div>
+  </div>
+  <div class="cards" id="cards-lunch"></div>
+</div>
+<hr class="divider" id="div-lunch">
+
+<!-- DINNER -->
+<div class="section" id="sec-dinner" data-section="dinner">
+  <div class="section-heading">
+    <span class="section-emoji">🍽️</span>
+    <div><div class="section-title">Dinner</div><div class="section-sub">From casual to white tablecloth</div></div>
+  </div>
+  <div class="cards" id="cards-dinner"></div>
+</div>
+<hr class="divider" id="div-dinner">
+
+<!-- BRUNCH -->
+<div class="section" id="sec-brunch" data-section="brunch">
+  <div class="section-heading">
+    <span class="section-emoji">🥂</span>
+    <div><div class="section-title">Brunch</div><div class="section-sub">Weekend vibes</div></div>
+  </div>
+  <div class="cards" id="cards-brunch"></div>
+</div>
+<hr class="divider" id="div-brunch">
+
+<!-- SWEETS -->
+<div class="section" id="sec-sweets" data-section="sweets">
+  <div class="section-heading">
+    <span class="section-emoji">🍩</span>
+    <div><div class="section-title">Sweets</div><div class="section-sub">Donuts, ice cream, cookies</div></div>
+  </div>
+  <div class="cards" id="cards-sweets"></div>
+</div>
+<hr class="divider" id="div-sweets">
+
+<!-- BARS -->
+<div class="section" id="sec-bars" data-section="bars">
+  <div class="section-heading">
+    <span class="section-emoji">🍸</span>
+    <div><div class="section-title">Bars</div><div class="section-sub">Cocktails, mezcal, late nights</div></div>
+  </div>
+  <div class="cards" id="cards-bars"></div>
+</div>
+<hr class="divider" id="div-bars">
+
+<!-- NO RESULTS -->
+<div class="no-results" id="no-results">
+  <div class="no-results-emoji">🤷</div>
+  <p>No spots match those filters.<br>Try clearing one of them.</p>
+</div>
+
+<!-- NEIGHBORHOODS -->
+<div class="nbhd-section" id="sec-neighborhoods">
+  <div class="nbhd-heading">
+    <span class="section-emoji">🗺️</span>
+    <div><div class="nbhd-title">Neighborhoods</div><div class="nbhd-sub">How to navigate ATX</div></div>
+  </div>
+  <div class="nbhd-cards" id="nbhd-cards"></div>
+</div>
+
+</div>
+
+<footer>Austin Eats · Jake's Guide</footer>
+
+<script>
+// ── DATA ──
+const SPOTS = [
+  // BREAKFAST
+  {name:"Bird Bird Biscuit",meal:"breakfast",price:2,cuisine:"southern",type:"Biscuit Sandwiches",bar:"biscuit",tags:["Casual","Food Truck","Outdoor"],must:"The Queen Beak — fried chicken biscuit sandwich. One of the best in Austin.",notes:null,featured:false,badge:null},
+  {name:"Taco Joint",meal:"breakfast",price:1,cuisine:"mexican",type:"Breakfast Tacos",bar:"mexican",tags:["Casual","Indoor"],must:"Potato, egg, cheese & chorizo with habanero salsa. House-made flour tortillas are the real deal.",notes:null,featured:false,badge:null},
+  {name:"Nervous Charlie's",meal:"breakfast",price:2,cuisine:"cafe",type:"Bagel Sandwiches",bar:"cafe",tags:["Casual","Indoor"],must:"Bagel breakfast sandwiches — housemade and legitimately great.",notes:null,featured:false,badge:null},
+  {name:"Brooklyn Breakfast Shop",meal:"breakfast",price:1,cuisine:"cafe",type:"Bagel Sandwiches · Food Truck",bar:"cafe",tags:["Casual","Food Truck","Outdoor"],must:"Bagel sandwiches — NYC deli vibes in a food truck park setting.",notes:null,featured:false,badge:null},
+  {name:"Sour Duck Market",meal:"breakfast",price:2,cuisine:"cafe",type:"Bakery / Coffee",bar:"cafe",tags:["Casual","Indoor"],must:"The coffee cake — legitimately obsession-worthy.",notes:"Fun breakfast options beyond just pastries too.",featured:false,badge:null},
+  {name:"Cenote",meal:"breakfast",price:2,cuisine:"cafe",type:"Coffee Shop / Breakfast",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Breakfast sandwich. East side location in a converted old house — great vibe.",notes:null,featured:false,badge:null},
+  {name:"Proud Mary",meal:"breakfast",price:2,cuisine:"cafe",type:"Australian Café · South Lamar",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Australian-style breakfast and exceptional coffee. Known for elevated café food done right.",notes:"Open 7am daily. South Lamar.",featured:false,badge:null},
+  {name:"Lefty's Day & Night",meal:"breakfast",price:2,cuisine:"southern",type:"Patio Bar / All-Day · East 6th",bar:"cafe",tags:["Casual","Outdoor","Indoor"],must:"Fried mortadella sandwich, coffee and cocktails. Great sports bar energy with actual good food.",notes:"Emmer & Rye group at Arrive Austin hotel. Open 7am daily.",featured:false,badge:null},
+  // LUNCH
+  {name:"Terry Black's BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ",bar:"bbq",tags:["Casual","Indoor"],must:"Brisket (hands-down favorite in Austin) + jalapeño cheddar sausage.",notes:null,featured:false,badge:null},
+  {name:"La Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Brisket — get there by 10:30am before the line goes wild. Sells out.",notes:"Opens at 11am. Arrive early or you'll wait forever.",featured:false,badge:null},
+  {name:"Valentina's Tex Mex BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Tex-Mex BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Brisket and ribs with Tex-Mex sides — queso, corn, the works.",notes:null,featured:false,badge:null},
+  {name:"KG BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Egyptian BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on — chef is a James Beard semifinalist. Featured on a Netflix BBQ show.",notes:"Unique concept — Egyptian spices meet Texas BBQ. Bucket list spot.",featured:false,badge:null},
+  {name:"Franklin Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · East 11th",bar:"bbq",tags:["Casual","Outdoor"],must:"Brisket. Full stop. Weekend beef ribs if you can get them. Arrive by 9am — sells out daily.",notes:"Named best BBQ in the known universe by Texas Monthly. Michelin Bib Gourmand. Open Tue–Sun 11am–3pm. The line is real — bring drinks.",featured:true,badge:"🏆 Bucket List"},
+  {name:"LeRoy and Lewis",meal:"lunch",price:2,cuisine:"bbq",type:"Creative BBQ · Michelin Star",bar:"bbq",tags:["Casual","Outdoor","Indoor"],must:"Beef cheeks, miso glazed carrot, Texas red chili Frito pie. Non-traditional cuts done better than most.",notes:"Michelin star (2024). 2026 Restaurant of the Year nominee. The \"food person\" BBQ pick.",featured:false,badge:null},
+  {name:"Veracruz All Natural",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Migas taco (what they're famous for) + al pastor. Location in Cosmic Coffee.",notes:null,featured:false,badge:null},
+  {name:"Pueblo Viejo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Al pastor tacos + the spicy green salsa. Don't sleep on the salsa.",notes:null,featured:false,badge:null},
+  {name:"Con Todo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — this truck has earned serious attention city-wide.",notes:"North side location — worth the drive.",featured:false,badge:null},
+  {name:"Asador Tacos",meal:"lunch",price:2,cuisine:"mexican",type:"Dinner Tacos · Multiple Locations",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Their dinner tacos. Locations at a mezcal bar and on Rainey Street.",notes:null,featured:false,badge:null},
+  {name:"La Santa Barbacha",meal:"lunch",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null},
+  {name:"Tommy Want Wingy",meal:"lunch",price:2,cuisine:"southern",type:"Wings · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Best wings in Austin. Located at Cosmic Coffee. Enough said.",notes:null,featured:false,badge:null},
+  {name:"Tumble 22",meal:"lunch",price:2,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Nashville-style hot chicken. A go-to for spice lovers in Austin.",notes:null,featured:false,badge:null},
+  {name:"Happy Chicks",meal:"lunch",price:1,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Fried chicken. Think Chick-fil-A but grown up and better.",notes:null,featured:false,badge:null},
+  {name:"Spicy Boys",meal:"lunch",price:2,cuisine:"asian",type:"Pan-Asian Fried Chicken · Food Truck",bar:"asian",tags:["Casual","Food Truck","Outdoor"],must:"Spicy fried chicken — Pan-Asian inspired with serious heat.",notes:null,featured:false,badge:null},
+  {name:"Via 313",meal:"lunch",price:2,cuisine:"pizza",type:"Detroit-Style Pizza",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"Detroit-style deep dish. Crispy edges, thick crust, sauce on top.",notes:null,featured:false,badge:null},
+  {name:"Side Eye Pie",meal:"lunch",price:2,cuisine:"pizza",type:"Pizza · Food Truck (Meanwhile Brewing)",bar:"pizza",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on the menu. Located at Meanwhile Brewing — great pizza + beer combo.",notes:null,featured:false,badge:null},
+  {name:"Home Slice Pizza",meal:"lunch",price:2,cuisine:"pizza",type:"NY-Style Pizza · SoCo",bar:"pizza",tags:["Casual","Indoor"],must:"The Italian sub and pepperoni pizza. A SoCo institution.",notes:null,featured:false,badge:null},
+  {name:"Ramen Tatsuya",meal:"lunch",price:2,cuisine:"asian",type:"Ramen",bar:"asian",tags:["Casual","Indoor"],must:"Tonkotsu ramen — the broth at the south location is exceptional.",notes:"Great cozy meal option. Multiple locations.",featured:false,badge:null},
+  {name:"Buenos Aires Café",meal:"lunch",price:2,cuisine:"mediterranean",type:"Argentine / Speakeasy",bar:"mediterranean",tags:["Casual","Indoor"],must:"Empanadas — and check out the speakeasy bar in the basement.",notes:"East side. Hidden bar downstairs is a great bonus.",featured:false,badge:null},
+  {name:"JewBoy Burgers",meal:"lunch",price:2,cuisine:"burgers",type:"Burgers · Casual Diner",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"Oy Vay Guey burger (hatch green chile + pepper jack) + potato latkes with garlic schmutz sauce.",notes:"Jewish-Latino fusion diner near UT. Closed Mondays.",featured:false,badge:null},
+  {name:"JewBoy Sliders",meal:"lunch",price:1,cuisine:"burgers",type:"Sliders · Late Night · East 6th",bar:"burgers",tags:["Casual","Outdoor"],must:"The Vato and Redneck slider packs + mini latkes. Open until 1–2:30am. Perfect post-bar move.",notes:"Separate concept from JewBoy Burgers. Multiple Austin locations.",featured:false,badge:null},
+  {name:"NADC Burger",meal:"lunch",price:2,cuisine:"burgers",type:"Wagyu Smash Burger · Rainey & East 6th",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"One option, done perfectly. 100% Texas Wagyu, American cheese, secret sauce, onions, pickles, jalapeños. Beast Mode fries.",notes:"Michelin-starred chef + pro skater collab. East 6th open til 3am Fri/Sat.",featured:false,badge:null},
+  {name:"Buddy's Burger",meal:"lunch",price:1,cuisine:"burgers",type:"Classic Burgers · South Congress",bar:"burgers",tags:["Casual","Indoor"],must:"Classic smash burger — high quality, no nonsense. One of Austin's consistently best burgers.",notes:null,featured:false,badge:null},
+  {name:"Cosmic Coffee",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Tommy Want Wingy (best wings in ATX) + Veracruz All Natural. South Austin.",notes:null,featured:false,badge:null},
+  {name:"Radio Coffee & Beer",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Rotating food truck lineup. Great hang spot with coffee or a beer.",notes:null,featured:false,badge:null},
+  {name:"Meanwhile Brewing",meal:"lunch",price:2,cuisine:"pizza",type:"Brewery + Multiple Food Trucks",bar:"pizza",tags:["Casual","Outdoor"],must:"Side Eye Pie (great pizza) + Distant Relatives (African BBQ). Laid-back brewery with a great outdoor setup.",notes:null,featured:false,badge:null},
+  // DINNER
+  {name:"Jeffrey's",meal:"dinner",price:4,cuisine:"steakhouse",type:"Steakhouse · Fine Dining · Clarksville",bar:"steakhouse",tags:["Upscale","Indoor"],must:"Wood-fired dry-aged prime steak + the martini cart service. One of the deepest wine lists in Texas.",notes:"Open since 1975. Michelin Guide. One of the 101 Best Steakhouses in the World. 2026 Restaurant of the Year nominee. White-jacket service. Open daily 4:30pm. Reservations essential.",featured:true,badge:"⭐ Best in ATX"},
+  {name:"Hestia",meal:"dinner",price:4,cuisine:"southern",type:"Open Flame · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"Everything — the entire menu is cooked over open flame. One of the most acclaimed restaurants in Austin.",notes:"Part of the Emmer & Rye group. Michelin One Star. Make a reservation.",featured:false,badge:null},
+  {name:"Olamaie",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"Whatever's seasonal — rotating Southern menu, near downtown. Pairs well with jazz after dinner.",notes:"Near a jazz club — dinner + live jazz is a natural combo.",featured:false,badge:null},
+  {name:"Ezov",meal:"dinner",price:3,cuisine:"mediterranean",type:"Mediterranean · Fine Dining",bar:"mediterranean",tags:["Upscale","Indoor"],must:"Mediterranean small plates — part of the same group as Hestia. High confidence.",notes:"Newer spot, highly anticipated. Same restaurant group as Hestia.",featured:false,badge:null},
+  {name:"Birdie's",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Wine Bar · Upscale Casual",bar:"southern",tags:["Upscale","Indoor"],must:"Rotating menu — everything has been exceptional. Best wine list in Austin.",notes:"No reservations. Menu changes constantly. Worth the wait.",featured:false,badge:null},
+  {name:"Lenoir",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Garden Dining",bar:"southern",tags:["Upscale","Outdoor"],must:"Whatever's on the seasonal menu. The outdoor wine garden is the move on a good night.",notes:"Semi-rotating menu. Wine garden seating available Saturday nights.",featured:false,badge:null},
+  {name:"Lutie's",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Hotel Restaurant",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"The seasonal menu — beautiful restaurant at the Commodore Perry Hotel.",notes:"Highly popular, often booked out. Get on the Resy notification list.",featured:false,badge:null},
+  {name:"Emmer & Rye",meal:"dinner",price:4,cuisine:"southern",type:"New American · Farm-to-Table · Rainey Street",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"Cacio e pepe (a permanent fixture), fresh-milled grain pastas, and whatever's rotating on the dim sum carts.",notes:"Michelin Bib Gourmand + Green Star (2024 & 2025). The flagship of the group.",featured:false,badge:null},
+  {name:"Fonda San Miguel",meal:"dinner",price:3,cuisine:"mexican",type:"Interior Mexican · Longstanding Institution",bar:"mexican",tags:["Upscale","Indoor"],must:"Interior Mexican classics — a long-standing Austin institution, not Tex-Mex.",notes:"Sunday brunch buffet is legendary. Not in the heart of downtown but worth it.",featured:false,badge:null},
+  {name:"Suerte",meal:"dinner",price:3,cuisine:"mexican",type:"East Side Mexican · Masa-Focused",bar:"mexican",tags:["Upscale Casual","Indoor"],must:"Brisket tacos — masa-focused menu, east side. Also does brunch.",notes:"Reservations can be tough. Keep an eye on availability or try brunch.",featured:false,badge:null},
+  {name:"Matt's El Rancho",meal:"dinner",price:2,cuisine:"mexican",type:"Tex-Mex Institution · South Lamar",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Bob Armstrong Dip (the queso that started it all) + sizzling beef fajitas. An Austin institution since 1952.",notes:"No reservations — join the waitlist on arrival. Closed Tuesdays. Great for big groups.",featured:false,badge:null},
+  {name:"Polvos",meal:"dinner",price:2,cuisine:"mexican",type:"Casual Mexican · South 1st",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Fajitas + the salsa bar. Pet-friendly patio, daily happy hour, open early and late.",notes:"Longstanding South Austin Mexican staple. Laid-back and reliable.",featured:false,badge:null},
+  {name:"Nixta Taqueria",meal:"dinner",price:2,cuisine:"mexican",type:"Masa Taqueria · James Beard Award",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Duck carnitas taco on heirloom pink corn tortilla + tuna tostada. Counter service — walk in.",notes:"James Beard Award winner + Michelin Bib Gourmand + Green Star. Also offers reservation-only tasting menu Thu–Sat. Closed Mondays.",featured:false,badge:null},
+  {name:"Canje",meal:"dinner",price:3,cuisine:"caribbean",type:"Caribbean · East 6th",bar:"caribbean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Ceviche, jerk chicken, and oxtail beef patties with pineapple pique. The cocktail program is excellent.",notes:"From Chef Tavel Bristol-Joseph (Emmer & Rye group). Named one of NYT's Top 50 Restaurants in America. Reservations recommended.",featured:false,badge:null},
+  {name:"Este",meal:"dinner",price:3,cuisine:"seafood",type:"Coastal Mexican Seafood · East Austin",bar:"seafood",tags:["Upscale Casual","Indoor","Outdoor"],must:"Shrimp aguachile negro, tuna tiradito, oysters with salsa negra. Happy hour spills onto a big back deck.",notes:"From the Suerte team (Chef Fermín Núñez, 2024 James Beard semifinalist). Lunch on weekends.",featured:false,badge:null},
+  {name:"Kalimotxo",meal:"dinner",price:3,cuisine:"mediterranean",type:"Spanish Tapas & Pintxos · East 6th",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Jamon croquettes, Patatas Bravas, Basque burnt cheesecake, and anything with the Spanish wine porrón.",notes:"Emmer & Rye group. Now at the Arrive Austin hotel on East 6th. 2026 James Beard nominated bar program.",featured:false,badge:null},
+  {name:"Bar Toti",meal:"dinner",price:2,cuisine:"mediterranean",type:"Spanish-Inspired · Casual Sit-Down",bar:"mediterranean",tags:["Casual","Indoor"],must:"The smashburgesa — Spanish take on a smash burger. Fun small plates format.",notes:"Great for groups doing a bunch of small plates. Limited NA options.",featured:false,badge:null},
+  {name:"Distant Relatives",meal:"dinner",price:2,cuisine:"bbq",type:"African-Inspired BBQ · Meanwhile Brewing",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"African-inspired BBQ — one of Austin's most unique food trucks.",notes:null,featured:false,badge:null},
+  {name:"Odd Duck",meal:"dinner",price:3,cuisine:"southern",type:"Farm-to-Table · South Lamar",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Cast iron cheddar cornbread, redfish ceviche, and whatever's rotating seasonally. Great bar seat if you're solo.",notes:"2026 Restaurant of the Year nominee. Rotating seasonal menu. Opens 4:30pm daily.",featured:false,badge:null},
+  {name:"Launderette",meal:"dinner",price:3,cuisine:"southern",type:"New American · East Austin",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Texas Redfish, fried shrimp with ginger scallion hot oil, and potato chips with pimento cheese.",notes:"Michelin Guide. Global flavors from Chef Rene Ortiz in a converted laundromat on Holly St.",featured:false,badge:null},
+  {name:"Uptown Sports Club",meal:"dinner",price:2,cuisine:"southern",type:"Louisiana Brasserie · East Austin",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Gumbo, fried chicken biscuit sandwich, the Downtown Burger. Open lunch to late night daily.",notes:"Aaron Franklin (Franklin BBQ) backed revival of a 1949 East Austin institution.",featured:false,badge:null},
+  {name:"Pint House",meal:"dinner",price:2,cuisine:"southern",type:"Craft Beer + Food",bar:"default",tags:["Casual","Indoor","Outdoor"],must:"House brews + pub food. Great atmosphere, solid tap list.",notes:null,featured:false,badge:null},
+  {name:"Second Bar + Kitchen",meal:"dinner",price:2,cuisine:"southern",type:"New American · East 6th · All-Day",bar:"default",tags:["Casual","Indoor"],must:"Rotisserie options, pizza, creative cocktails. Solid all-day spot with a reliable kitchen.",notes:"Located at the East Austin Hotel on East 6th. Open 9am–9/10pm daily.",featured:false,badge:null},
+  {name:"La Santa Barbacha",meal:"dinner",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null},
+  // BRUNCH
+  {name:"Mattie's",meal:"brunch",price:3,cuisine:"southern",type:"Southern · Roaming Peacocks",bar:"southern",tags:["Upscale Casual","Outdoor"],must:"The experience as much as the food — peacocks roam the grounds. Southern brunch menu.",notes:"More of a vibe spot than a food destination, but still good.",featured:false,badge:null},
+  {name:"P6 at The Line Hotel",meal:"brunch",price:3,cuisine:"southern",type:"Rooftop Bar Brunch",bar:"southern",tags:["Upscale","Outdoor"],must:"Anything — the rooftop views are the real draw. Great for a daytime drinks brunch.",notes:null,featured:false,badge:null},
+  {name:"Paperboy",meal:"brunch",price:2,cuisine:"cafe",type:"Beloved Brunch Spot",bar:"cafe",tags:["Casual","Outdoor"],must:"Whatever's on — consistently one of the top brunch spots in Austin. Reservations go fast.",notes:"Book early — often booked out. Watch for cancellations. Now has a second South Lamar location.",featured:false,badge:null},
+  {name:"Josephine House",meal:"brunch",price:2,cuisine:"southern",type:"Charming House Restaurant",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Brunch menu in a converted house — very charming setting.",notes:"Also often booked out. Keep an eye on reservations.",featured:false,badge:null},
+  {name:"Aba",meal:"brunch",price:3,cuisine:"mediterranean",type:"Mediterranean · South Congress",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Mediterranean brunch fare — on South Congress, not Austin-unique but very popular.",notes:null,featured:false,badge:null},
+  // SWEETS
+  {name:"The Salty Donut",meal:"sweets",price:1,cuisine:"sweets",type:"Donuts · South Congress",bar:"sweets",tags:["Casual","Indoor"],must:"Rotating creative donut flavors. A SoCo stop.",notes:null,featured:false,badge:null},
+  {name:"Merry Monarch Creamery",meal:"sweets",price:1,cuisine:"sweets",type:"Ice Cream · Food Truck",bar:"sweets",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — super unique, creative flavors. Bucket list ice cream truck.",notes:null,featured:false,badge:null},
+  {name:"Tiny's Milk & Cookies",meal:"sweets",price:1,cuisine:"sweets",type:"Cookies",bar:"sweets",tags:["Casual","Indoor"],must:"The cookies — obsession-worthy. Located in a cute little shopping complex.",notes:null,featured:false,badge:null},
+  {name:"Gourdough's",meal:"sweets",price:1,cuisine:"sweets",type:"Gourmet Donuts · Food Trailer · South 1st",bar:"sweets",tags:["Casual","Food Trailer","Outdoor"],must:"Flying Pig (bacon maple frosting) or the Nutty Valentine. Every donut is made-to-order and enormous.",notes:"Open until midnight daily, til 3am on weekends. An Austin original.",featured:false,badge:null},
+  // BARS
+  {name:"Whisler's",meal:"bars",price:2,cuisine:"cocktails",type:"Cocktail Bar · East 6th",bar:"cocktails",tags:["Casual","Indoor","Outdoor"],must:"Craft cocktails downstairs + sneak upstairs to Mezcaleria Tobala (hidden mezcal speakeasy, weekends only). Thai-Kun food truck on site.",notes:"100-year-old building on East 6th. Award-winning cocktail program. One of Austin's best bars — full stop. Happy hour Mon–Fri 4–7pm.",featured:false,badge:null},
+  {name:"Small Victory",meal:"bars",price:3,cuisine:"cocktails",type:"Cocktail Bar · Downtown",bar:"cocktails",tags:["Upscale","Indoor"],must:"Whatever the bartender recommends — serious craft cocktail bar with rotating seasonal menu.",notes:"108 E. 7th St, downtown. Intimate, polished, drinks-forward. Great date night bar.",featured:false,badge:null},
+];
+
+const PRICE_LABELS = { 1:"$", 2:"$$", 3:"$$$", 4:"$$$$" };
+
+const TAG_CLASSES = {
+  "Casual":"tag-casual","Upscale":"tag-fancy","Upscale Casual":"tag-fancy",
+  "Indoor":"tag-indoor","Outdoor":"tag-outdoor","Food Truck":"tag-truck","Food Trailer":"tag-truck"
+};
+
+const NEIGHBORHOODS = [
+  {name:"South Congress (SoCo)",desc:"Classic, quintessential Austin. The main cool shopping strip — nothing built to block views of the Capitol. Home Slice Pizza is here. First stop for any visitor."},
+  {name:"East 6th",desc:"Super walkable and cool. Independent bars, restaurants, and a creative energy. Great for an evening stroll and bar hop."},
+  {name:"Dirty 6th",desc:"The party district. Wild, loud, chaotic. If that's your scene, go for it — otherwise skip it."},
+  {name:"West 6th",desc:"Sports bars and big back patios. Great for watching games and day drinking."},
+  {name:"Rainey Street",desc:"Old homes converted into bars, each with food trucks out front and live music everywhere. Narrow, walkable, and lively."},
+  {name:"South Lamar",desc:"Quirky and eclectic restaurants. More of a destination for a specific restaurant than a general hang — but lots of good options."},
+  {name:"The Domain",desc:"~25 min north of downtown. Good for specific stores or an Austin FC soccer game. Second-trip territory."},
+  {name:"Lake Travis",desc:"Austin's premier lake — rent a boat for the day. The Oasis has middling food but incredible sunset views. It's a hike from downtown."},
+  {name:"Lake Austin",desc:"A dammed river that feels like a lake, right near downtown. Massive homes line the shores. Fun restaurants accessible by water."},
+  {name:"Lady Bird Lake",desc:"Right in front of downtown. Best spot for paddleboarding. Also where you can see the famous Congress Ave bat colony — largest urban colony in the US."},
+];
+
+// ── RENDER ──
+function buildCard(spot) {
+  const card = document.createElement('div');
+  card.className = `card${spot.featured ? ' featured' : ''}`;
+  card.dataset.meal = spot.meal;
+  card.dataset.price = spot.price;
+  card.dataset.cuisine = spot.cuisine;
+
+  const tagHTML = spot.tags.map(t => {
+    const cls = TAG_CLASSES[t] || 'tag-indoor';
+    return `<span class="tag ${cls}">${t}</span>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="card-top-bar ${spot.bar}"></div>
+    <div class="card-inner">
+      <div class="card-meta">
+        <span class="card-cuisine-label">${spot.type}</span>
+        <span class="card-price">${PRICE_LABELS[spot.price]}</span>
+      </div>
+      ${spot.badge ? `<div class="badge">${spot.badge}</div>` : ''}
+      <div class="card-name">${spot.name}</div>
+      <div class="tags">${tagHTML}</div>
+      <div class="must-order">
+        <div class="must-label">🔥 Must Order</div>
+        <div class="must-text">${spot.must}</div>
+      </div>
+      ${spot.notes ? `<div class="card-notes">${spot.notes}</div>` : ''}
+    </div>`;
+  return card;
+}
+
+// Group spots into sections
+const SECTIONS = ['breakfast','lunch','dinner','brunch','sweets','bars'];
+const cardContainers = {};
+SECTIONS.forEach(s => {
+  cardContainers[s] = document.getElementById(`cards-${s}`);
+});
+
+// Populate all cards
+const allCards = [];
+SPOTS.forEach(spot => {
+  const card = buildCard(spot);
+  cardContainers[spot.meal].appendChild(card);
+  allCards.push(card);
+});
+
+// Neighborhoods
+const nbhdContainer = document.getElementById('nbhd-cards');
+NEIGHBORHOODS.forEach(n => {
+  const el = document.createElement('div');
+  el.className = 'nbhd-card';
+  el.innerHTML = `<div class="nbhd-name">${n.name}</div><div class="nbhd-desc">${n.desc}</div>`;
+  nbhdContainer.appendChild(el);
+});
+
+// ── FILTERING ──
+const state = { meal:'all', price:'all', cuisine:'all' };
+
+function applyFilters() {
+  let visible = 0;
+
+  allCards.forEach(card => {
+    const mealOk  = state.meal    === 'all' || card.dataset.meal    === state.meal;
+    const priceOk = state.price   === 'all' || card.dataset.price   === String(state.price);
+    const cusOk   = state.cuisine === 'all' || card.dataset.cuisine === state.cuisine;
+    if (mealOk && priceOk && cusOk) {
+      card.classList.remove('hidden');
+      visible++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+
+  // Hide empty sections
+  SECTIONS.forEach(s => {
+    const sec = document.getElementById(`sec-${s}`);
+    const div = document.getElementById(`div-${s}`);
+    const hasVisible = cardContainers[s].querySelector('.card:not(.hidden)');
+    sec.classList.toggle('hidden', !hasVisible);
+    if (div) div.classList.toggle('hidden', !hasVisible);
+  });
+
+  // Results bar
+  const isFiltering = state.meal !== 'all' || state.price !== 'all' || state.cuisine !== 'all';
+  const bar = document.getElementById('results-bar');
+  const noRes = document.getElementById('no-results');
+  document.getElementById('spot-count').textContent = isFiltering ? `${visible} of ${SPOTS.length} spots` : `${SPOTS.length} spots`;
+  bar.classList.toggle('visible', isFiltering);
+  document.getElementById('results-text').textContent = `${visible} spot${visible !== 1 ? 's' : ''} match`;
+  noRes.classList.toggle('visible', visible === 0);
+}
+
+function resetFilters() {
+  state.meal = 'all'; state.price = 'all'; state.cuisine = 'all';
+  document.querySelectorAll('.pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.value === 'all');
+  });
+  applyFilters();
+}
+
+document.querySelectorAll('.pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const type = btn.dataset.filter;
+    const val  = btn.dataset.value;
+    if (state[type] === val && val !== 'all') {
+      state[type] = 'all';
+    } else {
+      state[type] = val;
+    }
+    document.querySelectorAll(`.pill[data-filter="${type}"]`).forEach(b => {
+      b.classList.toggle('active', b.dataset.value === state[type]);
+    });
+    applyFilters();
+  });
+});
+</script>
+</body>
+</html>
