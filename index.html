@@ -343,12 +343,7 @@ body {
   color: rgba(245,239,228,0.4);
 }
 .nbhd-cards { display: flex; flex-direction: column; gap: 8px; }
-.nbhd-card {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 12px 14px;
-}
+.nbhd-card-placeholder { display:none; }
 .nbhd-name {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
@@ -385,6 +380,33 @@ footer {
 .no-results.visible { display: block; }
 .no-results-emoji { font-size: 2.5rem; margin-bottom: 12px; }
 .no-results p { font-size: 0.85rem; line-height: 1.6; }
+
+/* ── NEIGHBORHOOD CARDS (interactive) ── */
+.nbhd-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.nbhd-card:active { opacity: 0.8; }
+.nbhd-card.active-nbhd {
+  border-color: #5b9cf6;
+  box-shadow: 0 0 0 2px rgba(91,156,246,0.35);
+  background: rgba(91,156,246,0.08);
+}
+.nbhd-tap-hint {
+  font-size: 0.58rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #5b9cf6;
+  margin-top: 4px;
+  display: none;
+}
+.nbhd-card.active-nbhd .nbhd-tap-hint { display: block; }
+
 </style>
 </head>
 <body>
@@ -435,6 +457,11 @@ footer {
     <button class="pill" data-filter="cuisine" data-value="southern">🍗 Southern</button>
     <button class="pill" data-filter="cuisine" data-value="steakhouse">🥩 Steak</button>
     <button class="pill" data-filter="cuisine" data-value="sweets">🍩 Sweets</button>
+  </div>
+
+  <div class="filter-label">Neighborhood</div>
+  <div class="filter-row" id="nbhd-filter-row">
+    <button class="pill active" data-filter="neighborhood" data-value="all">All</button>
   </div>
 </div>
 
@@ -538,130 +565,132 @@ footer {
 // ── DATA ──
 const SPOTS = [
   // BREAKFAST
-  {name:"Bird Bird Biscuit",meal:"breakfast",price:2,cuisine:"southern",type:"Biscuit Sandwiches",bar:"biscuit",tags:["Casual","Food Truck","Outdoor"],must:"The Queen Beak — fried chicken biscuit sandwich. One of the best in Austin.",notes:null,featured:false,badge:null},
-  {name:"Taco Joint",meal:"breakfast",price:1,cuisine:"mexican",type:"Breakfast Tacos",bar:"mexican",tags:["Casual","Indoor"],must:"Potato, egg, cheese & chorizo with habanero salsa. House-made flour tortillas are the real deal.",notes:null,featured:false,badge:null},
-  {name:"Nervous Charlie's",meal:"breakfast",price:2,cuisine:"cafe",type:"Bagel Sandwiches",bar:"cafe",tags:["Casual","Indoor"],must:"Bagel breakfast sandwiches — housemade and legitimately great.",notes:null,featured:false,badge:null},
-  {name:"Brooklyn Breakfast Shop",meal:"breakfast",price:1,cuisine:"cafe",type:"Bagel Sandwiches · Food Truck",bar:"cafe",tags:["Casual","Food Truck","Outdoor"],must:"Bagel sandwiches — NYC deli vibes in a food truck park setting.",notes:null,featured:false,badge:null},
-  {name:"Sour Duck Market",meal:"breakfast",price:2,cuisine:"cafe",type:"Bakery / Coffee",bar:"cafe",tags:["Casual","Indoor"],must:"The coffee cake — legitimately obsession-worthy.",notes:"Fun breakfast options beyond just pastries too.",featured:false,badge:null},
-  {name:"Swedish Hill",meal:"breakfast",price:2,cuisine:"cafe",type:"Bakery & Deli · Multiple Locations",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Pastries, smoked fish deli case, sandwiches, and exceptional coffee. The lemon meringue tart is legendary.",notes:"Part of MML Hospitality (Josephine House same group). Multiple locations — West 6th, South 1st, downtown. Open 7am daily. No laptops policy in café.",featured:false,badge:null},
-  {name:"Cenote",meal:"breakfast",price:2,cuisine:"cafe",type:"Coffee Shop / Breakfast",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Breakfast sandwich. East side location in a converted old house — great vibe.",notes:null,featured:false,badge:null},
-  {name:"Proud Mary",meal:"breakfast",price:2,cuisine:"cafe",type:"Australian Café · South Lamar",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Australian-style breakfast and exceptional coffee. Known for elevated café food done right.",notes:"Open 7am daily. South Lamar.",featured:false,badge:null},
-  {name:"La Santa Barbacha",meal:"breakfast",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek on fresh tortillas. The move on a weekend morning.",notes:"Weekend breakfast staple. One of the best barbacoa trucks in Austin.",featured:false,badge:null},
-  {name:"Lefty's Day & Night",meal:"breakfast",price:2,cuisine:"southern",type:"Patio Bar / All-Day · East 6th",bar:"cafe",tags:["Casual","Outdoor","Indoor"],must:"Fried mortadella sandwich, coffee and cocktails. Great sports bar energy with actual good food.",notes:"Emmer & Rye group at Arrive Austin hotel. Open 7am daily.",featured:false,badge:null},
+  {name:"Bird Bird Biscuit",meal:"breakfast",price:2,cuisine:"southern",type:"Biscuit Sandwiches",bar:"biscuit",tags:["Casual","Food Truck","Outdoor"],must:"The Queen Beak — fried chicken biscuit sandwich. One of the best in Austin.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Taco Joint",meal:"breakfast",price:1,cuisine:"mexican",type:"Breakfast Tacos",bar:"mexican",tags:["Casual","Indoor"],must:"Potato, egg, cheese & chorizo with habanero salsa. House-made flour tortillas are the real deal.",notes:null,featured:false,badge:null,neighborhood:"North Loop"},
+  {name:"Nervous Charlie's",meal:"breakfast",price:2,cuisine:"cafe",type:"Bagel Sandwiches",bar:"cafe",tags:["Casual","Indoor"],must:"Bagel breakfast sandwiches — housemade and legitimately great.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Brooklyn Breakfast Shop",meal:"breakfast",price:1,cuisine:"cafe",type:"Bagel Sandwiches · Food Truck",bar:"cafe",tags:["Casual","Food Truck","Outdoor"],must:"Bagel sandwiches — NYC deli vibes in a food truck park setting.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Sour Duck Market",meal:"breakfast",price:2,cuisine:"cafe",type:"Bakery / Coffee",bar:"cafe",tags:["Casual","Indoor"],must:"The coffee cake — legitimately obsession-worthy.",notes:"Fun breakfast options beyond just pastries too.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Swedish Hill",meal:"breakfast",price:2,cuisine:"cafe",type:"Bakery & Deli · Multiple Locations",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Pastries, smoked fish deli case, sandwiches, and exceptional coffee. The lemon meringue tart is legendary.",notes:"Part of MML Hospitality (Josephine House same group). Multiple locations — West 6th, South 1st, downtown. Open 7am daily. No laptops policy in café.",featured:false,badge:null,neighborhood:"Multiple"},
+  {name:"Cenote",meal:"breakfast",price:2,cuisine:"cafe",type:"Coffee Shop / Breakfast",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Breakfast sandwich. East side location in a converted old house — great vibe.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Proud Mary",meal:"breakfast",price:2,cuisine:"cafe",type:"Australian Café · South Lamar",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Australian-style breakfast and exceptional coffee. Known for elevated café food done right.",notes:"Open 7am daily. South Lamar.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"La Santa Barbacha",meal:"breakfast",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek on fresh tortillas. The move on a weekend morning.",notes:"Weekend breakfast staple. One of the best barbacoa trucks in Austin.",featured:false,badge:null,neighborhood:"South 1st"},
+  {name:"Lefty's Day & Night",meal:"breakfast",price:2,cuisine:"southern",type:"Patio Bar / All-Day · East 6th",bar:"cafe",tags:["Casual","Outdoor","Indoor"],must:"Fried mortadella sandwich, coffee and cocktails. Great sports bar energy with actual good food.",notes:"Emmer & Rye group at Arrive Austin hotel. Open 7am daily.",featured:false,badge:null,neighborhood:"East Austin"},
   // LUNCH
-  {name:"Terry Black's BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ",bar:"bbq",tags:["Casual","Indoor"],must:"Brisket (hands-down favorite in Austin) + jalapeño cheddar sausage.",notes:null,featured:false,badge:null},
-  {name:"La Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Brisket — get there by 10:30am before the line goes wild. Sells out.",notes:"Opens at 11am. Arrive early or you'll wait forever.",featured:false,badge:null},
-  {name:"KG BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Egyptian BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on — chef is a James Beard semifinalist. Featured on a Netflix BBQ show.",notes:"Unique concept — Egyptian spices meet Texas BBQ. Bucket list spot.",featured:false,badge:null},
-  {name:"Micklethwait Craft Meats",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · East Austin",bar:"bbq",tags:["Casual","Indoor","Outdoor"],must:"Brisket, house-made sausage, and beef ribs (weekends only). Everything scratch-made including the pickles and bread.",notes:"New brick-and-mortar in a converted 1940s church at 4602 Tanney St. Open Thu–Sun 11am–8pm. Dog-friendly patio under pecan trees.",featured:false,badge:null},
-  {name:"Franklin Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · East 11th",bar:"bbq",tags:["Casual","Outdoor"],must:"Brisket. Full stop. Weekend beef ribs if you can get them. Arrive by 9am — sells out daily.",notes:"Named best BBQ in the known universe by Texas Monthly. Michelin Bib Gourmand. Open Tue–Sun 11am–3pm. The line is real — bring drinks.",featured:true,badge:"🏆 Bucket List"},
-  {name:"LeRoy and Lewis",meal:"lunch",price:2,cuisine:"bbq",type:"Creative BBQ · Michelin Star",bar:"bbq",tags:["Casual","Outdoor","Indoor"],must:"Beef cheeks, miso glazed carrot, Texas red chili Frito pie. Non-traditional cuts done better than most.",notes:"Michelin star (2024). 2026 Restaurant of the Year nominee. The \"food person\" BBQ pick.",featured:false,badge:null},
-  {name:"Veracruz All Natural",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Migas taco (what they're famous for) + al pastor. Location in Cosmic Coffee.",notes:null,featured:false,badge:null},
-  {name:"Pueblo Viejo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Al pastor tacos + the spicy green salsa. Don't sleep on the salsa.",notes:null,featured:false,badge:null},
-  {name:"Con Todo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — this truck has earned serious attention city-wide.",notes:"North side location — worth the drive.",featured:false,badge:null},
-  {name:"Asador Tacos",meal:"lunch",price:2,cuisine:"mexican",type:"Dinner Tacos · Multiple Locations",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Their dinner tacos. Locations at a mezcal bar and on Rainey Street.",notes:null,featured:false,badge:null},
-  {name:"La Santa Barbacha",meal:"lunch",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null},
-  {name:"Tommy Want Wingy",meal:"lunch",price:2,cuisine:"southern",type:"Wings · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Best wings in Austin. Located at Cosmic Coffee. Enough said.",notes:null,featured:false,badge:null},
-  {name:"Tumble 22",meal:"lunch",price:2,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Nashville-style hot chicken. A go-to for spice lovers in Austin.",notes:null,featured:false,badge:null},
-  {name:"Happy Chicks",meal:"lunch",price:1,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Fried chicken. Think Chick-fil-A but grown up and better.",notes:null,featured:false,badge:null},
-  {name:"Spicy Boys",meal:"lunch",price:2,cuisine:"asian",type:"Pan-Asian Fried Chicken · Food Truck",bar:"asian",tags:["Casual","Food Truck","Outdoor"],must:"Spicy fried chicken — Pan-Asian inspired with serious heat.",notes:null,featured:false,badge:null},
-  {name:"Via 313",meal:"lunch",price:2,cuisine:"pizza",type:"Detroit-Style Pizza",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"Detroit-style deep dish. Crispy edges, thick crust, sauce on top.",notes:null,featured:false,badge:null},
-  {name:"Side Eye Pie",meal:"lunch",price:2,cuisine:"pizza",type:"Pizza · Food Truck (Meanwhile Brewing)",bar:"pizza",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on the menu. Located at Meanwhile Brewing — great pizza + beer combo.",notes:null,featured:false,badge:null},
-  {name:"Home Slice Pizza",meal:"lunch",price:2,cuisine:"pizza",type:"NY-Style Pizza · SoCo",bar:"pizza",tags:["Casual","Indoor"],must:"The Italian sub — the best in Austin, full stop. And the all-beef pepperoni pizza for the best slice.",notes:null,featured:false,badge:null},
-  {name:"Ramen Tatsuya",meal:"lunch",price:2,cuisine:"asian",type:"Ramen",bar:"asian",tags:["Casual","Indoor"],must:"Tonkotsu ramen — the broth at the south location is exceptional.",notes:"Great cozy meal option. Multiple locations.",featured:false,badge:null},
-  {name:"Buenos Aires Café",meal:"lunch",price:2,cuisine:"mediterranean",type:"Argentine / Speakeasy",bar:"mediterranean",tags:["Casual","Indoor"],must:"Empanadas — and check out the speakeasy bar in the basement.",notes:"East side. Hidden bar downstairs is a great bonus.",featured:false,badge:null},
-  {name:"JewBoy Burgers",meal:"lunch",price:2,cuisine:"burgers",type:"Burgers · Casual Diner",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"Oy Vay Guey burger (hatch green chile + pepper jack) + potato latkes with garlic schmutz sauce.",notes:"Jewish-Latino fusion diner near UT. Closed Mondays.",featured:false,badge:null},
-  {name:"JewBoy Sliders",meal:"lunch",price:1,cuisine:"burgers",type:"Sliders · Late Night · East 6th",bar:"burgers",tags:["Casual","Outdoor"],must:"The Vato and Redneck slider packs + mini latkes. Open until 1–2:30am. Perfect post-bar move.",notes:"Separate concept from JewBoy Burgers. Multiple Austin locations.",featured:false,badge:null},
-  {name:"NADC Burger",meal:"lunch",price:2,cuisine:"burgers",type:"Wagyu Smash Burger · Rainey & East 6th",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"One option, done perfectly. 100% Texas Wagyu, American cheese, secret sauce, onions, pickles, jalapeños. Beast Mode fries.",notes:"Michelin-starred chef + pro skater collab. East 6th open til 3am Fri/Sat.",featured:false,badge:null},
-  {name:"Buddy's Burger",meal:"lunch",price:1,cuisine:"burgers",type:"Classic Burgers · South Congress",bar:"burgers",tags:["Casual","Indoor"],must:"Classic smash burger — high quality, no nonsense. One of Austin's consistently best burgers.",notes:null,featured:false,badge:null},
-  {name:"Leona Botanical Café & Bar",meal:"lunch",price:2,cuisine:"cafe",type:"Garden Food Park · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Dee Dee's Thai food + Veracruz All Natural tacos, both operating counter-service in a stunning five-acre garden. Cocktail program with Thai and Mexican influences.",notes:"5-acre botanical garden at 6405 Brodie Ln. Dee Dee (Thai) + Veracruz All Natural (tacos) open from 7:30am–9:30pm daily. Garden bar open until 11pm. Proud Mary coffee on site.",featured:false,badge:null},
-  {name:"Cosmic Coffee",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Tommy Want Wingy (best wings in ATX) + Veracruz All Natural. South Austin.",notes:null,featured:false,badge:null},
-  {name:"Radio Coffee & Beer",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Rotating food truck lineup. Great hang spot with coffee or a beer.",notes:null,featured:false,badge:null},
-  {name:"Meanwhile Brewing",meal:"lunch",price:2,cuisine:"pizza",type:"Brewery + Multiple Food Trucks",bar:"pizza",tags:["Casual","Outdoor"],must:"Side Eye Pie (great pizza) + Distant Relatives (African BBQ). Laid-back brewery with a great outdoor setup.",notes:null,featured:false,badge:null},
+  {name:"Terry Black's BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ",bar:"bbq",tags:["Casual","Indoor"],must:"Brisket (hands-down favorite in Austin) + jalapeño cheddar sausage.",notes:null,featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"La Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Brisket — get there by 10:30am before the line goes wild. Sells out.",notes:"Opens at 11am. Arrive early or you'll wait forever.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"KG BBQ",meal:"lunch",price:2,cuisine:"bbq",type:"Egyptian BBQ · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on — chef is a James Beard semifinalist. Featured on a Netflix BBQ show.",notes:"Unique concept — Egyptian spices meet Texas BBQ. Bucket list spot.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Micklethwait Craft Meats",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · East Austin",bar:"bbq",tags:["Casual","Indoor","Outdoor"],must:"Brisket, house-made sausage, and beef ribs (weekends only). Everything scratch-made including the pickles and bread.",notes:"New brick-and-mortar in a converted 1940s church at 4602 Tanney St. Open Thu–Sun 11am–8pm. Dog-friendly patio under pecan trees.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Franklin Barbecue",meal:"lunch",price:2,cuisine:"bbq",type:"Texas BBQ · East 11th",bar:"bbq",tags:["Casual","Outdoor"],must:"Brisket. Full stop. Weekend beef ribs if you can get them. Arrive by 9am — sells out daily.",notes:"Named best BBQ in the known universe by Texas Monthly. Michelin Bib Gourmand. Open Tue–Sun 11am–3pm. The line is real — bring drinks.",featured:true,badge:"🏆 Bucket List",neighborhood:"East Austin"},
+  {name:"LeRoy and Lewis",meal:"lunch",price:2,cuisine:"bbq",type:"Creative BBQ · Michelin Star",bar:"bbq",tags:["Casual","Outdoor","Indoor"],must:"Beef cheeks, miso glazed carrot, Texas red chili Frito pie. Non-traditional cuts done better than most.",notes:"Michelin star (2024). 2026 Restaurant of the Year nominee. The \"food person\" BBQ pick.",featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Veracruz All Natural",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Migas taco (what they're famous for) + al pastor. Location in Cosmic Coffee.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Pueblo Viejo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Al pastor tacos + the spicy green salsa. Don't sleep on the salsa.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Con Todo",meal:"lunch",price:1,cuisine:"mexican",type:"Tacos · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — this truck has earned serious attention city-wide.",notes:"North side location — worth the drive.",featured:false,badge:null,neighborhood:"North Austin"},
+  {name:"Asador Tacos",meal:"lunch",price:2,cuisine:"mexican",type:"Dinner Tacos · Multiple Locations",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Their dinner tacos. Locations at a mezcal bar and on Rainey Street.",notes:null,featured:false,badge:null,neighborhood:"Rainey Street"},
+  {name:"La Santa Barbacha",meal:"lunch",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null,neighborhood:"South 1st"},
+  {name:"Tommy Want Wingy",meal:"lunch",price:2,cuisine:"southern",type:"Wings · Food Truck",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"Best wings in Austin. Located at Cosmic Coffee. Enough said.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Tumble 22",meal:"lunch",price:2,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Nashville-style hot chicken. A go-to for spice lovers in Austin.",notes:null,featured:false,badge:null,neighborhood:"North Austin"},
+  {name:"Happy Chicks",meal:"lunch",price:1,cuisine:"southern",type:"Fried Chicken",bar:"southern",tags:["Casual","Indoor"],must:"Fried chicken. Think Chick-fil-A but grown up and better.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
+  {name:"Spicy Boys",meal:"lunch",price:2,cuisine:"asian",type:"Pan-Asian Fried Chicken · Food Truck",bar:"asian",tags:["Casual","Food Truck","Outdoor"],must:"Spicy fried chicken — Pan-Asian inspired with serious heat.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Via 313",meal:"lunch",price:2,cuisine:"pizza",type:"Detroit-Style Pizza",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"Detroit-style deep dish. Crispy edges, thick crust, sauce on top.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Side Eye Pie",meal:"lunch",price:2,cuisine:"pizza",type:"Pizza · Food Truck (Meanwhile Brewing)",bar:"pizza",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's on the menu. Located at Meanwhile Brewing — great pizza + beer combo.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Home Slice Pizza",meal:"lunch",price:2,cuisine:"pizza",type:"NY-Style Pizza · SoCo",bar:"pizza",tags:["Casual","Indoor"],must:"The Italian sub — the best in Austin, full stop. And the all-beef pepperoni pizza for the best slice.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
+  {name:"Ramen Tatsuya",meal:"lunch",price:2,cuisine:"asian",type:"Ramen",bar:"asian",tags:["Casual","Indoor"],must:"Tonkotsu ramen — the broth at the south location is exceptional.",notes:"Great cozy meal option. Multiple locations.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Buenos Aires Café",meal:"lunch",price:2,cuisine:"mediterranean",type:"Argentine / Speakeasy",bar:"mediterranean",tags:["Casual","Indoor"],must:"Empanadas — and check out the speakeasy bar in the basement.",notes:"East side. Hidden bar downstairs is a great bonus.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"JewBoy Burgers",meal:"lunch",price:2,cuisine:"burgers",type:"Burgers · Casual Diner",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"Oy Vay Guey burger (hatch green chile + pepper jack) + potato latkes with garlic schmutz sauce.",notes:"Jewish-Latino fusion diner near UT. Closed Mondays.",featured:false,badge:null,neighborhood:"North Loop"},
+  {name:"JewBoy Sliders",meal:"lunch",price:1,cuisine:"burgers",type:"Sliders · Late Night · East 6th",bar:"burgers",tags:["Casual","Outdoor"],must:"The Vato and Redneck slider packs + mini latkes. Open until 1–2:30am. Perfect post-bar move.",notes:"Separate concept from JewBoy Burgers. Multiple Austin locations.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"NADC Burger",meal:"lunch",price:2,cuisine:"burgers",type:"Wagyu Smash Burger · Rainey & East 6th",bar:"burgers",tags:["Casual","Indoor","Outdoor"],must:"One option, done perfectly. 100% Texas Wagyu, American cheese, secret sauce, onions, pickles, jalapeños. Beast Mode fries.",notes:"Michelin-starred chef + pro skater collab. East 6th open til 3am Fri/Sat.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Buddy's Burger",meal:"lunch",price:1,cuisine:"burgers",type:"Classic Burgers · South Congress",bar:"burgers",tags:["Casual","Indoor"],must:"Classic smash burger — high quality, no nonsense. One of Austin's consistently best burgers.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
+  {name:"Leona Botanical Café & Bar",meal:"lunch",price:2,cuisine:"cafe",type:"Garden Food Park · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Dee Dee's Thai food + Veracruz All Natural tacos, both operating counter-service in a stunning five-acre garden. Cocktail program with Thai and Mexican influences.",notes:"5-acre botanical garden at 6405 Brodie Ln. Dee Dee (Thai) + Veracruz All Natural (tacos) open from 7:30am–9:30pm daily. Garden bar open until 11pm. Proud Mary coffee on site.",featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Cosmic Coffee",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Tommy Want Wingy (best wings in ATX) + Veracruz All Natural. South Austin.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Radio Coffee & Beer",meal:"lunch",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Rotating food truck lineup. Great hang spot with coffee or a beer.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Meanwhile Brewing",meal:"lunch",price:2,cuisine:"pizza",type:"Brewery + Multiple Food Trucks",bar:"pizza",tags:["Casual","Outdoor"],must:"Side Eye Pie (great pizza) + Distant Relatives (African BBQ). Laid-back brewery with a great outdoor setup.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
   // DINNER
-  {name:"Jeffrey's",meal:"dinner",price:4,cuisine:"steakhouse",type:"Steakhouse · Fine Dining · Clarksville",bar:"steakhouse",tags:["Upscale","Indoor"],must:"Wood-fired dry-aged prime steak + the martini cart service. One of the deepest wine lists in Texas.",notes:"Open since 1975. Michelin Guide. One of the 101 Best Steakhouses in the World. 2026 Restaurant of the Year nominee. White-jacket service. Open daily 4:30pm. Reservations essential.",featured:true,badge:"⭐ Best in ATX"},
-  {name:"Hestia",meal:"dinner",price:4,cuisine:"southern",type:"Open Flame · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"The scallops and halibut — both legendary. Everything is cooked over a custom 20-ft open flame hearth. One of the most acclaimed restaurants in Austin.",notes:"Part of the Emmer & Rye group. Michelin One Star. Make a reservation.",featured:false,badge:null},
-  {name:"Olamaie",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"Whatever's seasonal — rotating Southern menu, near downtown. Pairs well with jazz after dinner.",notes:"Near a jazz club — dinner + live jazz is a natural combo.",featured:false,badge:null},
-  {name:"Ezov",meal:"dinner",price:3,cuisine:"mediterranean",type:"Mediterranean · Fine Dining",bar:"mediterranean",tags:["Upscale","Indoor"],must:"Mediterranean small plates — part of the same group as Hestia. High confidence.",notes:"Newer spot, highly anticipated. Same restaurant group as Hestia.",featured:false,badge:null},
-  {name:"Birdie's",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Wine Bar · Upscale Casual",bar:"southern",tags:["Upscale","Indoor"],must:"Rotating menu — everything has been exceptional. Best wine list in Austin.",notes:"No reservations. Menu changes constantly. Worth the wait.",featured:false,badge:null},
-  {name:"Lenoir",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Garden Dining",bar:"southern",tags:["Upscale","Outdoor"],must:"Whatever's on the seasonal menu. The outdoor wine garden is the move on a good night.",notes:"Semi-rotating menu. Wine garden seating available Saturday nights.",featured:false,badge:null},
-  {name:"Lutie's",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Hotel Restaurant",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"The seasonal menu — beautiful restaurant at the Commodore Perry Hotel.",notes:"Highly popular, often booked out. Get on the Resy notification list.",featured:false,badge:null},
-  {name:"Emmer & Rye",meal:"dinner",price:4,cuisine:"southern",type:"New American · Farm-to-Table · Rainey Street",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"Cacio e pepe (a permanent fixture), fresh-milled grain pastas, and whatever's rotating on the dim sum carts.",notes:"Michelin Bib Gourmand + Green Star (2024 & 2025). The flagship of the group.",featured:false,badge:null},
-  {name:"Fonda San Miguel",meal:"dinner",price:3,cuisine:"mexican",type:"Interior Mexican · Longstanding Institution",bar:"mexican",tags:["Upscale","Indoor"],must:"Interior Mexican classics — a long-standing Austin institution, not Tex-Mex.",notes:"Sunday brunch buffet is legendary. Not in the heart of downtown but worth it.",featured:false,badge:null},
-  {name:"Suerte",meal:"dinner",price:3,cuisine:"mexican",type:"East Side Mexican · Masa-Focused",bar:"mexican",tags:["Upscale Casual","Indoor"],must:"Brisket tacos — masa-focused menu, east side. Also does brunch.",notes:"Reservations can be tough. Keep an eye on availability or try brunch.",featured:false,badge:null},
-  {name:"Matt's El Rancho",meal:"dinner",price:2,cuisine:"mexican",type:"Tex-Mex Institution · South Lamar",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Bob Armstrong Dip (the queso that started it all) + sizzling beef fajitas. An Austin institution since 1952.",notes:"No reservations — join the waitlist on arrival. Closed Tuesdays. Great for big groups.",featured:false,badge:null},
-  {name:"Polvos",meal:"dinner",price:2,cuisine:"mexican",type:"Casual Mexican · South 1st",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Fajitas + the salsa bar. Pet-friendly patio, daily happy hour, open early and late.",notes:"Longstanding South Austin Mexican staple. Laid-back and reliable.",featured:false,badge:null},
-  {name:"Taquería de Diez",meal:"lunch",price:1,cuisine:"mexican",type:"Tijuana-Style Tacos · Downtown & South Lamar",bar:"mexican",tags:["Casual","Indoor"],must:"Al pastor off the trompo + any crunchy taco. Watch taqueros shave meat off the spinning spit in an open kitchen. Handmade tortillas and on-the-spot salsas.",notes:"Speakeasy-style entrance — follow the 'tacos' sign into an alley off Trinity St. #47 on Yelp's Top 100 US Restaurants 2026. Also at 2110 S Lamar. Founded by brothers from Tijuana/Sonora. Open til 1am Thu–Sat.",featured:false,badge:null},
-  {name:"Nixta Taqueria",meal:"dinner",price:2,cuisine:"mexican",type:"Masa Taqueria · James Beard Award",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Duck carnitas taco on heirloom pink corn tortilla + tuna tostada. Counter service — walk in.",notes:"James Beard Award winner + Michelin Bib Gourmand + Green Star. Also offers reservation-only tasting menu Thu–Sat. Closed Mondays.",featured:false,badge:null},
-  {name:"Canje",meal:"dinner",price:3,cuisine:"caribbean",type:"Caribbean · East 6th",bar:"caribbean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Ceviche, jerk chicken, and oxtail beef patties with pineapple pique. The cocktail program is excellent.",notes:"From Chef Tavel Bristol-Joseph (Emmer & Rye group). Named one of NYT's Top 50 Restaurants in America. Reservations recommended.",featured:false,badge:null},
-  {name:"Este",meal:"dinner",price:3,cuisine:"seafood",type:"Coastal Mexican Seafood · East Austin",bar:"seafood",tags:["Upscale Casual","Indoor","Outdoor"],must:"Shrimp aguachile negro, tuna tiradito, oysters with salsa negra. Happy hour spills onto a big back deck.",notes:"From the Suerte team (Chef Fermín Núñez, 2024 James Beard semifinalist). Lunch on weekends.",featured:false,badge:null},
-  {name:"Kalimotxo",meal:"dinner",price:3,cuisine:"mediterranean",type:"Spanish Tapas & Pintxos · East 6th",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Jamon croquettes, Patatas Bravas, Basque burnt cheesecake, and anything with the Spanish wine porrón.",notes:"Emmer & Rye group. Now at the Arrive Austin hotel on East 6th. 2026 James Beard nominated bar program.",featured:false,badge:null},
-  {name:"Bar Toti",meal:"dinner",price:2,cuisine:"mediterranean",type:"Spanish-Inspired · Casual Sit-Down",bar:"mediterranean",tags:["Casual","Indoor"],must:"The smashburgesa — Spanish take on a smash burger. Fun small plates format.",notes:"Great for groups doing a bunch of small plates. Limited NA options.",featured:false,badge:null},
-  {name:"Distant Relatives",meal:"dinner",price:2,cuisine:"bbq",type:"African-Inspired BBQ · Meanwhile Brewing",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"African-inspired BBQ — one of Austin's most unique food trucks.",notes:null,featured:false,badge:null},
-  {name:"Odd Duck",meal:"dinner",price:3,cuisine:"southern",type:"Farm-to-Table · South Lamar",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Cast iron cheddar cornbread, redfish ceviche, and whatever's rotating seasonally. Great bar seat if you're solo.",notes:"2026 Restaurant of the Year nominee. Rotating seasonal menu. Opens 4:30pm daily.",featured:false,badge:null},
-  {name:"Launderette",meal:"dinner",price:3,cuisine:"southern",type:"New American · East Austin",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Texas Redfish, fried shrimp with ginger scallion hot oil, and potato chips with pimento cheese.",notes:"Michelin Guide. Global flavors from Chef Rene Ortiz in a converted laundromat on Holly St.",featured:false,badge:null},
-  {name:"Uptown Sports Club",meal:"dinner",price:2,cuisine:"southern",type:"Louisiana Brasserie · East Austin",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Gumbo, fried chicken biscuit sandwich, the Downtown Burger. Open lunch to late night daily.",notes:"Aaron Franklin (Franklin BBQ) backed revival of a 1949 East Austin institution.",featured:false,badge:null},
-  {name:"Pint House",meal:"dinner",price:2,cuisine:"southern",type:"Craft Beer + Food",bar:"default",tags:["Casual","Indoor","Outdoor"],must:"House brews + pub food. Great atmosphere, solid tap list.",notes:null,featured:false,badge:null},
-  {name:"Second Bar + Kitchen",meal:"dinner",price:2,cuisine:"southern",type:"New American · East 6th · All-Day",bar:"default",tags:["Casual","Indoor"],must:"Rotisserie options, pizza, creative cocktails. Solid all-day spot with a reliable kitchen.",notes:"Located at the East Austin Hotel on East 6th. Open 9am–9/10pm daily.",featured:false,badge:null},
-  {name:"La Santa Barbacha",meal:"dinner",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null},
-  {name:"Aris",meal:"dinner",price:4,cuisine:"mediterranean",type:"Mediterranean Steakhouse · Clarksville",bar:"mediterranean",tags:["Upscale","Indoor"],must:"34oz 21-day dry-aged porterhouse, A-5 Wagyu striploin, and the roasted beet with five cheeses split tableside. Complimentary bread with sumac butter and olive oil marmalade.",notes:"From Sof Hospitality (Doris Metropolitan, Hamsa). Dry-aging room visible at the entrance. Great date night spot. Open Mon–Sat from 5pm, closed Sundays. Reservations recommended.",featured:false,badge:null},
-  {name:"Quattro Gatti",meal:"dinner",price:3,cuisine:"pizza",type:"Italian Trattoria · Downtown",bar:"pizza",tags:["Upscale Casual","Indoor","Outdoor"],must:"Wood-fired Neapolitan pizza + house-made pastas. Great spot before or after a show at the Paramount.",notes:"Family-run since 1876 landmark building on Congress Ave, steps from the Capitol. Austin Monthly Best Pizza. 13x Diner's Choice Award winner. Open daily 4:30pm.",featured:false,badge:null},
-  {name:"Juniper",meal:"dinner",price:4,cuisine:"southern",type:"Italian-Inspired Fine Dining",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"The six-course tasting menu — house-made pastas, refined vegetable courses, and elegant protein preparations. Counter seats overlooking the open kitchen are the move.",notes:"Consistently one of Austin's most acclaimed dinner spots. Private dining room available. Valet offered. Reservations strongly recommended.",featured:false,badge:null},
-  {name:"Lou's",meal:"lunch",price:2,cuisine:"southern",type:"Rotisserie · Counter Service · East Austin",bar:"southern",tags:["Casual","Outdoor"],must:"Half rotisserie chicken with dipping sauce + frozen custard. Breakfast tacos and Intelligentsia coffee in the morning.",notes:"Multiple locations — East Cesar Chavez and Barton Springs. Ping pong, corn hole, beer garden. Open 9am–10pm daily. MML Hospitality group.",featured:false,badge:null},
-  {name:"Local Foods",meal:"lunch",price:2,cuisine:"southern",type:"Farm-Fresh Sandwiches & Salads · N Lamar",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"The sandwiches and salads — farm-focused, locally sourced. A Houston institution.",notes:"3800 N. Lamar Blvd. Weekend brunch + weekday morning coffee walk-up window.",featured:false,badge:null},
-  {name:"Pinthouse Pizza",meal:"lunch",price:2,cuisine:"pizza",type:"Brewpub · Multiple Austin Locations",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"Electric Jellyfish hazy IPA (#1 beer in the country in 2025) + Sicilian-style pizza. The Ooh La La pie with arugula and spicy honey is the move.",notes:"#1 brewpub by barrelage in the US. 4 Austin locations. Great for groups. Happy hour weekdays 3–6pm.",featured:false,badge:null},
-  {name:"Uchi",meal:"dinner",price:4,cuisine:"asian",type:"Japanese Fine Dining · South Lamar",bar:"asian",tags:["Upscale","Indoor"],must:"Hama Chili (tuna sashimi in ponzu with serrano and cilantro) + the omakase tasting menu. The OG Austin fine dining experience.",notes:"From James Beard-winning chef Tyson Cole. One of Austin's most acclaimed restaurants since 2003. Reservations essential. 801 S Lamar.",featured:false,badge:null},
-  {name:"Justine's Brasserie",meal:"dinner",price:3,cuisine:"southern",type:"French Brasserie · East 5th · Late Night",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Steak frites, mussels, and the French onion soup. Classic brasserie done right. Open until 1:30am.",notes:"4710 E. 5th St. Open for dinner nightly. One of Austin's most romantic and lively late-night spots. Great patio. 2026 Neighborhood Restaurant of the Year nominee.",featured:false,badge:null},
+  {name:"Jeffrey's",meal:"dinner",price:4,cuisine:"steakhouse",type:"Steakhouse · Fine Dining · Clarksville",bar:"steakhouse",tags:["Upscale","Indoor"],must:"Wood-fired dry-aged prime steak + the martini cart service. One of the deepest wine lists in Texas.",notes:"Open since 1975. Michelin Guide. One of the 101 Best Steakhouses in the World. 2026 Restaurant of the Year nominee. White-jacket service. Open daily 4:30pm. Reservations essential.",featured:true,badge:"⭐ Best in ATX",neighborhood:"Clarksville"},
+  {name:"Hestia",meal:"dinner",price:4,cuisine:"southern",type:"Open Flame · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"The scallops and halibut — both legendary. Everything is cooked over a custom 20-ft open flame hearth. One of the most acclaimed restaurants in Austin.",notes:"Part of the Emmer & Rye group. Michelin One Star. Make a reservation.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Olamaie",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Fine Dining",bar:"southern",tags:["Upscale","Indoor"],must:"Whatever's seasonal — rotating Southern menu, near downtown. Pairs well with jazz after dinner.",notes:"Near a jazz club — dinner + live jazz is a natural combo.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Ezov",meal:"dinner",price:3,cuisine:"mediterranean",type:"Mediterranean · Fine Dining",bar:"mediterranean",tags:["Upscale","Indoor"],must:"Mediterranean small plates — part of the same group as Hestia. High confidence.",notes:"Newer spot, highly anticipated. Same restaurant group as Hestia.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Birdie's",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Wine Bar · Upscale Casual",bar:"southern",tags:["Upscale","Indoor"],must:"Rotating menu — everything has been exceptional. Best wine list in Austin.",notes:"No reservations. Menu changes constantly. Worth the wait.",featured:false,badge:null,neighborhood:"Clarksville"},
+  {name:"Lenoir",meal:"dinner",price:3,cuisine:"southern",type:"Southern · Garden Dining",bar:"southern",tags:["Upscale","Outdoor"],must:"Whatever's on the seasonal menu. The outdoor wine garden is the move on a good night.",notes:"Semi-rotating menu. Wine garden seating available Saturday nights.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Lutie's",meal:"dinner",price:4,cuisine:"southern",type:"Southern · Hotel Restaurant",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"The seasonal menu — beautiful restaurant at the Commodore Perry Hotel.",notes:"Highly popular, often booked out. Get on the Resy notification list.",featured:false,badge:null,neighborhood:"Hyde Park"},
+  {name:"Emmer & Rye",meal:"dinner",price:4,cuisine:"southern",type:"New American · Farm-to-Table · Rainey Street",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"Cacio e pepe (a permanent fixture), fresh-milled grain pastas, and whatever's rotating on the dim sum carts.",notes:"Michelin Bib Gourmand + Green Star (2024 & 2025). The flagship of the group.",featured:false,badge:null,neighborhood:"Rainey Street"},
+  {name:"Fonda San Miguel",meal:"dinner",price:3,cuisine:"mexican",type:"Interior Mexican · Longstanding Institution",bar:"mexican",tags:["Upscale","Indoor"],must:"Interior Mexican classics — a long-standing Austin institution, not Tex-Mex.",notes:"Sunday brunch buffet is legendary. Not in the heart of downtown but worth it.",featured:false,badge:null,neighborhood:"North Austin"},
+  {name:"Suerte",meal:"dinner",price:3,cuisine:"mexican",type:"East Side Mexican · Masa-Focused",bar:"mexican",tags:["Upscale Casual","Indoor"],must:"Brisket tacos — masa-focused menu, east side. Also does brunch.",notes:"Reservations can be tough. Keep an eye on availability or try brunch.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Matt's El Rancho",meal:"dinner",price:2,cuisine:"mexican",type:"Tex-Mex Institution · South Lamar",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Bob Armstrong Dip (the queso that started it all) + sizzling beef fajitas. An Austin institution since 1952.",notes:"No reservations — join the waitlist on arrival. Closed Tuesdays. Great for big groups.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Polvos",meal:"dinner",price:2,cuisine:"mexican",type:"Casual Mexican · South 1st",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Fajitas + the salsa bar. Pet-friendly patio, daily happy hour, open early and late.",notes:"Longstanding South Austin Mexican staple. Laid-back and reliable.",featured:false,badge:null,neighborhood:"South 1st"},
+  {name:"Taquería de Diez",meal:"lunch",price:1,cuisine:"mexican",type:"Tijuana-Style Tacos · Downtown & South Lamar",bar:"mexican",tags:["Casual","Indoor"],must:"Al pastor off the trompo + any crunchy taco. Watch taqueros shave meat off the spinning spit in an open kitchen. Handmade tortillas and on-the-spot salsas.",notes:"Speakeasy-style entrance — follow the 'tacos' sign into an alley off Trinity St. #47 on Yelp's Top 100 US Restaurants 2026. Also at 2110 S Lamar. Founded by brothers from Tijuana/Sonora. Open til 1am Thu–Sat.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Nixta Taqueria",meal:"dinner",price:2,cuisine:"mexican",type:"Masa Taqueria · James Beard Award",bar:"mexican",tags:["Casual","Indoor","Outdoor"],must:"Duck carnitas taco on heirloom pink corn tortilla + tuna tostada. Counter service — walk in.",notes:"James Beard Award winner + Michelin Bib Gourmand + Green Star. Also offers reservation-only tasting menu Thu–Sat. Closed Mondays.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Canje",meal:"dinner",price:3,cuisine:"caribbean",type:"Caribbean · East 6th",bar:"caribbean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Ceviche, jerk chicken, and oxtail beef patties with pineapple pique. The cocktail program is excellent.",notes:"From Chef Tavel Bristol-Joseph (Emmer & Rye group). Named one of NYT's Top 50 Restaurants in America. Reservations recommended.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Este",meal:"dinner",price:3,cuisine:"seafood",type:"Coastal Mexican Seafood · East Austin",bar:"seafood",tags:["Upscale Casual","Indoor","Outdoor"],must:"Shrimp aguachile negro, tuna tiradito, oysters with salsa negra. Happy hour spills onto a big back deck.",notes:"From the Suerte team (Chef Fermín Núñez, 2024 James Beard semifinalist). Lunch on weekends.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Kalimotxo",meal:"dinner",price:3,cuisine:"mediterranean",type:"Spanish Tapas & Pintxos · East 6th",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Jamon croquettes, Patatas Bravas, Basque burnt cheesecake, and anything with the Spanish wine porrón.",notes:"Emmer & Rye group. Now at the Arrive Austin hotel on East 6th. 2026 James Beard nominated bar program.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Bar Toti",meal:"dinner",price:2,cuisine:"mediterranean",type:"Spanish-Inspired · Casual Sit-Down",bar:"mediterranean",tags:["Casual","Indoor"],must:"The smashburgesa — Spanish take on a smash burger. Fun small plates format.",notes:"Great for groups doing a bunch of small plates. Limited NA options.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Distant Relatives",meal:"dinner",price:2,cuisine:"bbq",type:"African-Inspired BBQ · Meanwhile Brewing",bar:"bbq",tags:["Casual","Food Truck","Outdoor"],must:"African-inspired BBQ — one of Austin's most unique food trucks.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Odd Duck",meal:"dinner",price:3,cuisine:"southern",type:"Farm-to-Table · South Lamar",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Cast iron cheddar cornbread, redfish ceviche, and whatever's rotating seasonally. Great bar seat if you're solo.",notes:"2026 Restaurant of the Year nominee. Rotating seasonal menu. Opens 4:30pm daily.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Launderette",meal:"dinner",price:3,cuisine:"southern",type:"New American · East Austin",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Texas Redfish, fried shrimp with ginger scallion hot oil, and potato chips with pimento cheese.",notes:"Michelin Guide. Global flavors from Chef Rene Ortiz in a converted laundromat on Holly St.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Uptown Sports Club",meal:"dinner",price:2,cuisine:"southern",type:"Louisiana Brasserie · East Austin",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Gumbo, fried chicken biscuit sandwich, the Downtown Burger. Open lunch to late night daily.",notes:"Aaron Franklin (Franklin BBQ) backed revival of a 1949 East Austin institution.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Pint House",meal:"dinner",price:2,cuisine:"southern",type:"Craft Beer + Food",bar:"default",tags:["Casual","Indoor","Outdoor"],must:"House brews + pub food. Great atmosphere, solid tap list.",notes:null,featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Second Bar + Kitchen",meal:"dinner",price:2,cuisine:"southern",type:"New American · East 6th · All-Day",bar:"default",tags:["Casual","Indoor"],must:"Rotisserie options, pizza, creative cocktails. Solid all-day spot with a reliable kitchen.",notes:"Located at the East Austin Hotel on East 6th. Open 9am–9/10pm daily.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"La Santa Barbacha",meal:"dinner",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — traditional slow-cooked beef cheek.",notes:null,featured:false,badge:null,neighborhood:"South 1st"},
+  {name:"Aris",meal:"dinner",price:4,cuisine:"mediterranean",type:"Mediterranean Steakhouse · Clarksville",bar:"mediterranean",tags:["Upscale","Indoor"],must:"34oz 21-day dry-aged porterhouse, A-5 Wagyu striploin, and the roasted beet with five cheeses split tableside. Complimentary bread with sumac butter and olive oil marmalade.",notes:"From Sof Hospitality (Doris Metropolitan, Hamsa). Dry-aging room visible at the entrance. Great date night spot. Open Mon–Sat from 5pm, closed Sundays. Reservations recommended.",featured:false,badge:null,neighborhood:"Clarksville"},
+  {name:"Quattro Gatti",meal:"dinner",price:3,cuisine:"pizza",type:"Italian Trattoria · Downtown",bar:"pizza",tags:["Upscale Casual","Indoor","Outdoor"],must:"Wood-fired Neapolitan pizza + house-made pastas. Great spot before or after a show at the Paramount.",notes:"Family-run since 1876 landmark building on Congress Ave, steps from the Capitol. Austin Monthly Best Pizza. 13x Diner's Choice Award winner. Open daily 4:30pm.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Juniper",meal:"dinner",price:4,cuisine:"southern",type:"Italian-Inspired Fine Dining",bar:"southern",tags:["Upscale","Indoor","Outdoor"],must:"The six-course tasting menu — house-made pastas, refined vegetable courses, and elegant protein preparations. Counter seats overlooking the open kitchen are the move.",notes:"Consistently one of Austin's most acclaimed dinner spots. Private dining room available. Valet offered. Reservations strongly recommended.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Lou's",meal:"lunch",price:2,cuisine:"southern",type:"Rotisserie · Counter Service · East Austin",bar:"southern",tags:["Casual","Outdoor"],must:"Half rotisserie chicken with dipping sauce + frozen custard. Breakfast tacos and Intelligentsia coffee in the morning.",notes:"Multiple locations — East Cesar Chavez and Barton Springs. Ping pong, corn hole, beer garden. Open 9am–10pm daily. MML Hospitality group.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Local Foods",meal:"lunch",price:2,cuisine:"southern",type:"Farm-Fresh Sandwiches & Salads · N Lamar",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"The sandwiches and salads — farm-focused, locally sourced. A Houston institution.",notes:"3800 N. Lamar Blvd. Weekend brunch + weekday morning coffee walk-up window.",featured:false,badge:null,neighborhood:"North Austin"},
+  {name:"Pinthouse Pizza",meal:"lunch",price:2,cuisine:"pizza",type:"Brewpub · Multiple Austin Locations",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"Electric Jellyfish hazy IPA (#1 beer in the country in 2025) + Sicilian-style pizza. The Ooh La La pie with arugula and spicy honey is the move.",notes:"#1 brewpub by barrelage in the US. 4 Austin locations. Great for groups. Happy hour weekdays 3–6pm.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Uchi",meal:"dinner",price:4,cuisine:"asian",type:"Japanese Fine Dining · South Lamar",bar:"asian",tags:["Upscale","Indoor"],must:"Hama Chili (tuna sashimi in ponzu with serrano and cilantro) + the omakase tasting menu. The OG Austin fine dining experience.",notes:"From James Beard-winning chef Tyson Cole. One of Austin's most acclaimed restaurants since 2003. Reservations essential. 801 S Lamar.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Justine's Brasserie",meal:"dinner",price:3,cuisine:"southern",type:"French Brasserie · East 5th · Late Night",bar:"southern",tags:["Upscale Casual","Indoor","Outdoor"],must:"Steak frites, mussels, and the French onion soup. Classic brasserie done right. Open until 1:30am.",notes:"4710 E. 5th St. Open for dinner nightly. One of Austin's most romantic and lively late-night spots. Great patio. 2026 Neighborhood Restaurant of the Year nominee.",featured:false,badge:null,neighborhood:"East Austin"},
   // BRUNCH
-  {name:"La Santa Barbacha",meal:"brunch",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — the ultimate weekend brunch taco. Traditional slow-cooked beef cheek.",notes:"Weekend brunch staple. Cash-friendly, fast, and legitimately great.",featured:false,badge:null},
-  {name:"Juliet Italian Kitchen",meal:"brunch",price:2,cuisine:"pizza",type:"Italian · Barton Springs",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"House-made pastas, wood-fired dishes, beautiful patio. Great Italian weekend brunch.",notes:"1500 Barton Springs Rd, right by Zilker Park. Multiple Austin locations. Daily happy hour.",featured:false,badge:null},
-  {name:"Mattie's",meal:"brunch",price:3,cuisine:"southern",type:"Southern · Roaming Peacocks",bar:"southern",tags:["Upscale Casual","Outdoor"],must:"The experience as much as the food — peacocks roam the grounds. Southern brunch menu.",notes:"More of a vibe spot than a food destination, but still good.",featured:false,badge:null},
-  {name:"P6 at The Line Hotel",meal:"brunch",price:3,cuisine:"southern",type:"Rooftop Bar Brunch",bar:"southern",tags:["Upscale","Outdoor"],must:"Anything — the rooftop views are the real draw. Great for a daytime drinks brunch.",notes:null,featured:false,badge:null},
-  {name:"Paperboy",meal:"brunch",price:2,cuisine:"cafe",type:"Beloved Brunch Spot",bar:"cafe",tags:["Casual","Outdoor"],must:"Whatever's on — consistently one of the top brunch spots in Austin. Reservations go fast.",notes:"Book early — often booked out. Watch for cancellations. Now has a second South Lamar location.",featured:false,badge:null},
-  {name:"Josephine House",meal:"brunch",price:2,cuisine:"southern",type:"Charming House Restaurant",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Brunch menu in a converted house — very charming setting.",notes:"Also often booked out. Keep an eye on reservations.",featured:false,badge:null},
-  {name:"Aba",meal:"brunch",price:3,cuisine:"mediterranean",type:"Mediterranean · South Congress",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Mediterranean brunch fare — on South Congress, not Austin-unique but very popular.",notes:null,featured:false,badge:null},
+  {name:"La Santa Barbacha",meal:"brunch",price:1,cuisine:"mexican",type:"Mexican Barbacoa · Food Truck",bar:"mexican",tags:["Casual","Food Truck","Outdoor"],must:"Barbacoa tacos — the ultimate weekend brunch taco. Traditional slow-cooked beef cheek.",notes:"Weekend brunch staple. Cash-friendly, fast, and legitimately great.",featured:false,badge:null,neighborhood:"South 1st"},
+  {name:"Juliet Italian Kitchen",meal:"brunch",price:2,cuisine:"pizza",type:"Italian · Barton Springs",bar:"pizza",tags:["Casual","Indoor","Outdoor"],must:"House-made pastas, wood-fired dishes, beautiful patio. Great Italian weekend brunch.",notes:"1500 Barton Springs Rd, right by Zilker Park. Multiple Austin locations. Daily happy hour.",featured:false,badge:null,neighborhood:"Barton Springs"},
+  {name:"Mattie's",meal:"brunch",price:3,cuisine:"southern",type:"Southern · Roaming Peacocks",bar:"southern",tags:["Upscale Casual","Outdoor"],must:"The experience as much as the food — peacocks roam the grounds. Southern brunch menu.",notes:"More of a vibe spot than a food destination, but still good.",featured:false,badge:null,neighborhood:"Clarksville"},
+  {name:"P6 at The Line Hotel",meal:"brunch",price:3,cuisine:"southern",type:"Rooftop Bar Brunch",bar:"southern",tags:["Upscale","Outdoor"],must:"Anything — the rooftop views are the real draw. Great for a daytime drinks brunch.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
+  {name:"Paperboy",meal:"brunch",price:2,cuisine:"cafe",type:"Beloved Brunch Spot",bar:"cafe",tags:["Casual","Outdoor"],must:"Whatever's on — consistently one of the top brunch spots in Austin. Reservations go fast.",notes:"Book early — often booked out. Watch for cancellations. Now has a second South Lamar location.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Josephine House",meal:"brunch",price:2,cuisine:"southern",type:"Charming House Restaurant",bar:"southern",tags:["Casual","Indoor","Outdoor"],must:"Brunch menu in a converted house — very charming setting.",notes:"Also often booked out. Keep an eye on reservations.",featured:false,badge:null,neighborhood:"Clarksville"},
+  {name:"Aba",meal:"brunch",price:3,cuisine:"mediterranean",type:"Mediterranean · South Congress",bar:"mediterranean",tags:["Upscale Casual","Indoor","Outdoor"],must:"Mediterranean brunch fare — on South Congress, not Austin-unique but very popular.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
   // SWEETS
-  {name:"The Salty Donut",meal:"sweets",price:1,cuisine:"sweets",type:"Donuts · South Congress",bar:"sweets",tags:["Casual","Indoor"],must:"Rotating creative donut flavors. A SoCo stop.",notes:null,featured:false,badge:null},
-  {name:"Merry Monarch Creamery",meal:"sweets",price:1,cuisine:"sweets",type:"Ice Cream · Food Truck",bar:"sweets",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — super unique, creative flavors. Bucket list ice cream truck.",notes:null,featured:false,badge:null},
-  {name:"Tiny's Milk & Cookies",meal:"sweets",price:1,cuisine:"sweets",type:"Cookies",bar:"sweets",tags:["Casual","Indoor"],must:"The cookies — obsession-worthy. Located in a cute little shopping complex.",notes:null,featured:false,badge:null},
-  {name:"Gourdough's",meal:"sweets",price:1,cuisine:"sweets",type:"Gourmet Donuts · Food Trailer · South 1st",bar:"sweets",tags:["Casual","Food Trailer","Outdoor"],must:"Flying Pig (bacon maple frosting) or the Nutty Valentine. Every donut is made-to-order and enormous.",notes:"Open until midnight daily, til 3am on weekends. An Austin original.",featured:false,badge:null},
+  {name:"The Salty Donut",meal:"sweets",price:1,cuisine:"sweets",type:"Donuts · South Congress",bar:"sweets",tags:["Casual","Indoor"],must:"Rotating creative donut flavors. A SoCo stop.",notes:null,featured:false,badge:null,neighborhood:"South Congress"},
+  {name:"Merry Monarch Creamery",meal:"sweets",price:1,cuisine:"sweets",type:"Ice Cream · Food Truck",bar:"sweets",tags:["Casual","Food Truck","Outdoor"],must:"Whatever's seasonal — super unique, creative flavors. Bucket list ice cream truck.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Tiny's Milk & Cookies",meal:"sweets",price:1,cuisine:"sweets",type:"Cookies",bar:"sweets",tags:["Casual","Indoor"],must:"The cookies — obsession-worthy. Located in a cute little shopping complex.",notes:null,featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Gourdough's",meal:"sweets",price:1,cuisine:"sweets",type:"Gourmet Donuts · Food Trailer · South 1st",bar:"sweets",tags:["Casual","Food Trailer","Outdoor"],must:"Flying Pig (bacon maple frosting) or the Nutty Valentine. Every donut is made-to-order and enormous.",notes:"Open until midnight daily, til 3am on weekends. An Austin original.",featured:false,badge:null,neighborhood:"South 1st"},
   // COFFEE
-  {name:"Patika",meal:"coffee",price:2,cuisine:"cafe",type:"Specialty Coffee · Downtown",bar:"cafe",tags:["Casual","Indoor"],must:"Whatever they're featuring from Superthing Coffee Roasters — their in-house roasting company. Obsessive attention to detail.",notes:"100 Congress Ave, downtown. Serving Austin since 2010. Also does breakfast and lunch. Runs their own roasting operation.",featured:false,badge:null},
-  {name:"Sour Duck Market",meal:"coffee",price:2,cuisine:"cafe",type:"Bakery & Coffee · East Austin",bar:"cafe",tags:["Casual","Indoor"],must:"The coffee cake — legitimately obsession-worthy. Great coffee program too.",notes:"Also a solid breakfast spot. East Austin.",featured:false,badge:null},
-  {name:"Cenote",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee Shop · East Side",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"The coffee and breakfast sandwich. East side location in a converted old house.",notes:"Great outdoor patio. Neighborhood coffee shop feel.",featured:false,badge:null},
-  {name:"Proud Mary",meal:"coffee",price:2,cuisine:"cafe",type:"Australian Café · South Lamar",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Their coffee — Australian-style program done seriously well. Some of the best in Austin.",notes:"Open 7am daily. South Lamar.",featured:false,badge:null},
-  {name:"Swedish Hill",meal:"coffee",price:2,cuisine:"cafe",type:"Bakery & Deli · Multiple Locations",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Excellent coffee alongside pastries, smoked fish deli case, and sandwiches.",notes:"Multiple locations — West 6th, South 1st, downtown. Open 7am daily.",featured:false,badge:null},
-  {name:"Cosmic Coffee",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Great coffee in a sprawling outdoor setting. Tommy Want Wingy and Veracruz All Natural on site.",notes:"South Austin. One of the best coffee hang spots in the city.",featured:false,badge:null},
-  {name:"Radio Coffee & Beer",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Coffee by day, beer by night. Rotating food truck lineup.",notes:"Great hang spot. Big outdoor area.",featured:false,badge:null},
-  {name:"Leona Botanical Café & Bar",meal:"coffee",price:2,cuisine:"cafe",type:"Garden Café · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Proud Mary coffee in a stunning five-acre botanical garden. Best coffee setting in Austin.",notes:"6405 Brodie Ln. Open 7:30am daily.",featured:false,badge:null},
-  {name:"Brooklyn Breakfast Shop",meal:"coffee",price:1,cuisine:"cafe",type:"Bagel & Coffee · Food Truck",bar:"cafe",tags:["Casual","Food Truck","Outdoor"],must:"Coffee + bagel sandwiches in a food truck park setting.",notes:null,featured:false,badge:null},
+  {name:"Patika",meal:"coffee",price:2,cuisine:"cafe",type:"Specialty Coffee · Downtown",bar:"cafe",tags:["Casual","Indoor"],must:"Whatever they're featuring from Superthing Coffee Roasters — their in-house roasting company. Obsessive attention to detail.",notes:"100 Congress Ave, downtown. Serving Austin since 2010. Also does breakfast and lunch. Runs their own roasting operation.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Sour Duck Market",meal:"coffee",price:2,cuisine:"cafe",type:"Bakery & Coffee · East Austin",bar:"cafe",tags:["Casual","Indoor"],must:"The coffee cake — legitimately obsession-worthy. Great coffee program too.",notes:"Also a solid breakfast spot. East Austin.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Cenote",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee Shop · East Side",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"The coffee and breakfast sandwich. East side location in a converted old house.",notes:"Great outdoor patio. Neighborhood coffee shop feel.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Proud Mary",meal:"coffee",price:2,cuisine:"cafe",type:"Australian Café · South Lamar",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Their coffee — Australian-style program done seriously well. Some of the best in Austin.",notes:"Open 7am daily. South Lamar.",featured:false,badge:null,neighborhood:"South Lamar"},
+  {name:"Swedish Hill",meal:"coffee",price:2,cuisine:"cafe",type:"Bakery & Deli · Multiple Locations",bar:"cafe",tags:["Casual","Indoor","Outdoor"],must:"Excellent coffee alongside pastries, smoked fish deli case, and sandwiches.",notes:"Multiple locations — West 6th, South 1st, downtown. Open 7am daily.",featured:false,badge:null,neighborhood:"Multiple"},
+  {name:"Cosmic Coffee",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Great coffee in a sprawling outdoor setting. Tommy Want Wingy and Veracruz All Natural on site.",notes:"South Austin. One of the best coffee hang spots in the city.",featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Radio Coffee & Beer",meal:"coffee",price:2,cuisine:"cafe",type:"Coffee + Beer + Food Trucks",bar:"cafe",tags:["Casual","Outdoor"],must:"Coffee by day, beer by night. Rotating food truck lineup.",notes:"Great hang spot. Big outdoor area.",featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Leona Botanical Café & Bar",meal:"coffee",price:2,cuisine:"cafe",type:"Garden Café · South Austin",bar:"cafe",tags:["Casual","Outdoor"],must:"Proud Mary coffee in a stunning five-acre botanical garden. Best coffee setting in Austin.",notes:"6405 Brodie Ln. Open 7:30am daily.",featured:false,badge:null,neighborhood:"South Austin"},
+  {name:"Brooklyn Breakfast Shop",meal:"coffee",price:1,cuisine:"cafe",type:"Bagel & Coffee · Food Truck",bar:"cafe",tags:["Casual","Food Truck","Outdoor"],must:"Coffee + bagel sandwiches in a food truck park setting.",notes:null,featured:false,badge:null,neighborhood:"East Austin"},
   // BARS
-  {name:"Milonga Room",meal:"bars",price:2,cuisine:"cocktails",type:"Argentine Speakeasy · East 6th",bar:"cocktails",tags:["Upscale","Indoor"],must:"The Carajillo (espresso + amaro, velvety and perfectly balanced) and any amaro-forward cocktail. One of the largest Fernet and amaro collections in Texas.",notes:"Underground speakeasy beneath Buenos Aires Café on East 6th. Ring the doorbell, find the hidden red door. Reservation required. Open Wed–Thu 5pm–midnight, Fri–Sat 6pm–1am. Closed Sun–Tue. Best date bar in Austin.",featured:false,badge:null},
-  {name:"Casino El Camino",meal:"bars",price:1,cuisine:"burgers",type:"Dive Bar · Dirty 6th",bar:"burgers",tags:["Casual","Indoor"],must:"The Madison Burger — beer-braised pork belly, Shiner Bock gastrique, jalapeño jack. 3/4lb Angus hand-pattied burgers ordered from a walk-up window inside a dark, Gothic dive bar.",notes:"One of Austin's most beloved burger institutions. Pool tables, killer jukebox, pool of locals. Open daily 11:30am–2am, kitchen until 1:30am. Verde chili fries are mandatory.",featured:false,badge:null},
-  {name:"Golden Tiger",meal:"bars",price:1,cuisine:"burgers",type:"Burger Truck · At Whisler's · East 6th",bar:"burgers",tags:["Casual","Food Truck","Outdoor"],must:"Smash burgers, crispy fried chicken sandwiches, queso fries, and chicken fingers. The perfect pairing with a cocktail from Whisler's.",notes:"Parked at Whisler's on East 6th. Open until 1:30am. One of Austin's best late-night food truck setups.",featured:false,badge:null},
-  {name:"Here Nor There",meal:"bars",price:3,cuisine:"cocktails",type:"Speakeasy · East 6th",bar:"cocktails",tags:["Upscale","Indoor"],must:"The tarot-card-inspired cocktail menu — eccentric, creative, and genuinely exceptional. One of Austin's best cocktail programs.",notes:"Tucked between other bars on East 6th. Speakeasy atmosphere, dark and intimate. 2026 Bar of the Year nominee.",featured:false,badge:null},
-  {name:"Péché",meal:"bars",price:3,cuisine:"cocktails",type:"Absinthe Bar · Downtown",bar:"cocktails",tags:["Upscale","Indoor"],must:"The Sazerac — perfect every time. Or let the bartender guide you through the absinthe list. Beautiful French cooking too.",notes:"Downtown Austin's absinthe destination. Knowledgeable bartenders, intimate atmosphere. 2026 Bar of the Year nominee.",featured:false,badge:null},
-  {name:"Whisler's",meal:"bars",price:2,cuisine:"cocktails",type:"Cocktail Bar · East 6th",bar:"cocktails",tags:["Casual","Indoor","Outdoor"],must:"Craft cocktails downstairs + sneak upstairs to Mezcaleria Tobala (hidden mezcal speakeasy, weekends only). Thai-Kun food truck on site.",notes:"100-year-old building on East 6th. Award-winning cocktail program. One of Austin's best bars — full stop. Happy hour Mon–Fri 4–7pm.",featured:false,badge:null},
-  {name:"Small Victory",meal:"bars",price:3,cuisine:"cocktails",type:"Cocktail Bar · Downtown",bar:"cocktails",tags:["Upscale","Indoor"],must:"Whatever the bartender recommends — serious craft cocktail bar with rotating seasonal menu.",notes:"108 E. 7th St, downtown. Intimate, polished, drinks-forward. Great date night bar.",featured:false,badge:null},
+  {name:"Milonga Room",meal:"bars",price:2,cuisine:"cocktails",type:"Argentine Speakeasy · East 6th",bar:"cocktails",tags:["Upscale","Indoor"],must:"The Carajillo (espresso + amaro, velvety and perfectly balanced) and any amaro-forward cocktail. One of the largest Fernet and amaro collections in Texas.",notes:"Underground speakeasy beneath Buenos Aires Café on East 6th. Ring the doorbell, find the hidden red door. Reservation required. Open Wed–Thu 5pm–midnight, Fri–Sat 6pm–1am. Closed Sun–Tue. Best date bar in Austin.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Casino El Camino",meal:"bars",price:1,cuisine:"burgers",type:"Dive Bar · Dirty 6th",bar:"burgers",tags:["Casual","Indoor"],must:"The Madison Burger — beer-braised pork belly, Shiner Bock gastrique, jalapeño jack. 3/4lb Angus hand-pattied burgers ordered from a walk-up window inside a dark, Gothic dive bar.",notes:"One of Austin's most beloved burger institutions. Pool tables, killer jukebox, pool of locals. Open daily 11:30am–2am, kitchen until 1:30am. Verde chili fries are mandatory.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Golden Tiger",meal:"bars",price:1,cuisine:"burgers",type:"Burger Truck · At Whisler's · East 6th",bar:"burgers",tags:["Casual","Food Truck","Outdoor"],must:"Smash burgers, crispy fried chicken sandwiches, queso fries, and chicken fingers. The perfect pairing with a cocktail from Whisler's.",notes:"Parked at Whisler's on East 6th. Open until 1:30am. One of Austin's best late-night food truck setups.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Here Nor There",meal:"bars",price:3,cuisine:"cocktails",type:"Speakeasy · East 6th",bar:"cocktails",tags:["Upscale","Indoor"],must:"The tarot-card-inspired cocktail menu — eccentric, creative, and genuinely exceptional. One of Austin's best cocktail programs.",notes:"Tucked between other bars on East 6th. Speakeasy atmosphere, dark and intimate. 2026 Bar of the Year nominee.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Péché",meal:"bars",price:3,cuisine:"cocktails",type:"Absinthe Bar · Downtown",bar:"cocktails",tags:["Upscale","Indoor"],must:"The Sazerac — perfect every time. Or let the bartender guide you through the absinthe list. Beautiful French cooking too.",notes:"Downtown Austin's absinthe destination. Knowledgeable bartenders, intimate atmosphere. 2026 Bar of the Year nominee.",featured:false,badge:null,neighborhood:"Downtown"},
+  {name:"Whisler's",meal:"bars",price:2,cuisine:"cocktails",type:"Cocktail Bar · East 6th",bar:"cocktails",tags:["Casual","Indoor","Outdoor"],must:"Craft cocktails downstairs + sneak upstairs to Mezcaleria Tobala (hidden mezcal speakeasy, weekends only). Thai-Kun food truck on site.",notes:"100-year-old building on East 6th. Award-winning cocktail program. One of Austin's best bars — full stop. Happy hour Mon–Fri 4–7pm.",featured:false,badge:null,neighborhood:"East Austin"},
+  {name:"Small Victory",meal:"bars",price:3,cuisine:"cocktails",type:"Cocktail Bar · Downtown",bar:"cocktails",tags:["Upscale","Indoor"],must:"Whatever the bartender recommends — serious craft cocktail bar with rotating seasonal menu.",notes:"108 E. 7th St, downtown. Intimate, polished, drinks-forward. Great date night bar.",featured:false,badge:null,neighborhood:"Downtown"},
 ];
 
 const PRICE_LABELS = { 1:"$", 2:"$$", 3:"$$$", 4:"$$$$" };
 
 const TAG_CLASSES = {
-  "Casual":"tag-casual","Upscale":"tag-fancy","Upscale Casual":"tag-fancy",
+  "Casual":"tag-casual","Upscale":"tag-fancy","Upscale-Casual":"tag-fancy","Upscale Casual":"tag-fancy",
   "Indoor":"tag-indoor","Outdoor":"tag-outdoor","Food Truck":"tag-truck","Food Trailer":"tag-truck"
 };
 
 const NEIGHBORHOODS = [
-  {name:"South Congress (SoCo)",desc:"Classic, quintessential Austin. The main cool shopping strip — nothing built to block views of the Capitol. Home Slice Pizza is here. First stop for any visitor."},
-  {name:"East 6th",desc:"Super walkable and cool. Independent bars, restaurants, and a creative energy. Great for an evening stroll and bar hop."},
-  {name:"Dirty 6th",desc:"The party district. Wild, loud, chaotic. If that's your scene, go for it — otherwise skip it."},
-  {name:"West 6th",desc:"Sports bars and big back patios. Great for watching games and day drinking."},
-  {name:"Rainey Street",desc:"Old homes converted into bars, each with food trucks out front and live music everywhere. Narrow, walkable, and lively."},
-  {name:"South Lamar",desc:"Quirky and eclectic restaurants. More of a destination for a specific restaurant than a general hang — but lots of good options."},
-  {name:"The Domain",desc:"~25 min north of downtown. Good for specific stores or an Austin FC soccer game. Second-trip territory."},
-  {name:"Lake Travis",desc:"Austin's premier lake — rent a boat for the day. The Oasis has middling food but incredible sunset views. It's a hike from downtown."},
-  {name:"Lake Austin",desc:"A dammed river that feels like a lake, right near downtown. Massive homes line the shores. Fun restaurants accessible by water."},
-  {name:"Lady Bird Lake",desc:"Right in front of downtown. Best spot for paddleboarding. Also where you can see the famous Congress Ave bat colony — largest urban colony in the US."},
+  {name:"East Austin",desc:"The most active dining corridor in the city. Independent bars, taquerias, cocktail spots, and acclaimed restaurants — Nixta, Canje, Whisler's, Franklin, Launderette, and more."},
+  {name:"Downtown",desc:"For special occasions and late nights. Hestia, Jeffrey's, Péché, Casino El Camino, Quattro Gatti. Steps from the Capitol."},
+  {name:"South Congress",desc:"Classic, quintessential Austin. The main cool shopping strip — nothing built to block views of the Capitol. Home Slice, Aba, Salty Donut."},
+  {name:"South Lamar",desc:"Uchi, Odd Duck, Proud Mary, Lenoir, Matt's El Rancho, Pinthouse. Quirky and eclectic — more of a destination strip than a walkable hang."},
+  {name:"South 1st",desc:"Polvos, Swedish Hill, Gourdough's. Laid-back South Austin neighborhood strip. Great for casual daytime eats."},
+  {name:"South Austin",desc:"Cosmic Coffee, Leona Botanical, Meanwhile Brewing, LeRoy and Lewis. Spread out but worth it — great food truck parks and breweries."},
+  {name:"Clarksville",desc:"Jeffrey's, Aris, Birdie's, Mattie's, Josephine House. Old-money Austin neighborhood just west of downtown. Beautiful and walkable."},
+  {name:"Rainey Street",desc:"Emmer & Rye, Asador Tacos. Old homes turned into bars with food trucks and live music. Narrow, walkable, and lively."},
+  {name:"North Loop",desc:"JewBoy Burgers, Taco Joint. Neighborhood vibe, vintage shops, low-key Austin energy."},
+  {name:"North Austin",desc:"Fonda San Miguel, Tumble 22, Local Foods, Con Todd. Worth the drive for specific spots."},
+  {name:"Hyde Park",desc:"Lutie's at the Commodore Perry Estate. Quiet residential neighborhood, beautiful historic homes."},
+  {name:"Barton Springs",desc:"Juliet Italian Kitchen. Right by Zilker Park — great for a meal before or after a swim."},
 ];
 
 // ── RENDER ──
@@ -671,6 +700,7 @@ function buildCard(spot) {
   card.dataset.meal = spot.meal;
   card.dataset.price = spot.price;
   card.dataset.cuisine = spot.cuisine;
+  card.dataset.neighborhood = spot.neighborhood || '';
 
   const tagHTML = spot.tags.map(t => {
     const cls = TAG_CLASSES[t] || 'tag-indoor';
@@ -711,26 +741,49 @@ SPOTS.forEach(spot => {
   allCards.push(card);
 });
 
-// Neighborhoods
+// Neighborhoods — interactive cards + populate filter pills
 const nbhdContainer = document.getElementById('nbhd-cards');
+const nbhdFilterRow = document.getElementById('nbhd-filter-row');
 NEIGHBORHOODS.forEach(n => {
+  // Card
   const el = document.createElement('div');
   el.className = 'nbhd-card';
-  el.innerHTML = `<div class="nbhd-name">${n.name}</div><div class="nbhd-desc">${n.desc}</div>`;
+  el.dataset.nbhd = n.name;
+  el.innerHTML = `<div class="nbhd-name">${n.name}</div><div class="nbhd-desc">${n.desc}</div><div class="nbhd-tap-hint">Tap to clear</div>`;
+  el.addEventListener('click', () => toggleNeighborhood(n.name, el));
   nbhdContainer.appendChild(el);
+  // Pill
+  const pill = document.createElement('button');
+  pill.className = 'pill';
+  pill.dataset.filter = 'neighborhood';
+  pill.dataset.value = n.name;
+  pill.textContent = n.name;
+  pill.addEventListener('click', () => {
+    const active = state.neighborhood === n.name;
+    state.neighborhood = active ? 'all' : n.name;
+    document.querySelectorAll('.pill[data-filter="neighborhood"]').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === state.neighborhood);
+    });
+    document.querySelectorAll('.nbhd-card').forEach(c => {
+      c.classList.toggle('active-nbhd', c.dataset.nbhd === state.neighborhood);
+    });
+    applyFilters();
+  });
+  nbhdFilterRow.appendChild(pill);
 });
 
 // ── FILTERING ──
-const state = { meal:'all', price:'all', cuisine:'all' };
+const state = { meal:'all', price:'all', cuisine:'all', neighborhood:'all' };
 
 function applyFilters() {
   let visible = 0;
 
   allCards.forEach(card => {
-    const mealOk  = state.meal    === 'all' || card.dataset.meal    === state.meal;
-    const priceOk = state.price   === 'all' || card.dataset.price   === String(state.price);
-    const cusOk   = state.cuisine === 'all' || card.dataset.cuisine === state.cuisine;
-    if (mealOk && priceOk && cusOk) {
+    const mealOk  = state.meal         === 'all' || card.dataset.meal         === state.meal;
+    const priceOk = state.price        === 'all' || card.dataset.price        === String(state.price);
+    const cusOk   = state.cuisine      === 'all' || card.dataset.cuisine      === state.cuisine;
+    const nbhdOk  = state.neighborhood === 'all' || card.dataset.neighborhood === state.neighborhood;
+    if (mealOk && priceOk && cusOk && nbhdOk) {
       card.classList.remove('hidden');
       visible++;
     } else {
@@ -738,7 +791,7 @@ function applyFilters() {
     }
   });
 
-  // Hide empty sections
+  // Hide empty sections (neighborhoods section always stays visible)
   SECTIONS.forEach(s => {
     const sec = document.getElementById(`sec-${s}`);
     const div = document.getElementById(`div-${s}`);
@@ -746,22 +799,50 @@ function applyFilters() {
     sec.classList.toggle('hidden', !hasVisible);
     if (div) div.classList.toggle('hidden', !hasVisible);
   });
+  // Always show neighborhoods
+  const nbhdSec = document.getElementById('sec-neighborhoods');
+  if (nbhdSec) nbhdSec.classList.remove('hidden');
 
   // Results bar
-  const isFiltering = state.meal !== 'all' || state.price !== 'all' || state.cuisine !== 'all';
+  const isFiltering = state.meal !== 'all' || state.price !== 'all' || state.cuisine !== 'all' || state.neighborhood !== 'all';
   const bar = document.getElementById('results-bar');
   const noRes = document.getElementById('no-results');
   document.getElementById('spot-count').textContent = isFiltering ? `${visible} of ${SPOTS.length} spots` : `${SPOTS.length} spots`;
   bar.classList.toggle('visible', isFiltering);
-  document.getElementById('results-text').textContent = `${visible} spot${visible !== 1 ? 's' : ''} match`;
+  // Build label string
+  const PRICE_MAP = {'1':'$','2':'$$','3':'$$$','4':'$$$$'};
+  const parts = [];
+  if (state.neighborhood !== 'all') parts.push(state.neighborhood);
+  if (state.meal !== 'all') parts.push(state.meal);
+  if (state.price !== 'all') parts.push(PRICE_MAP[state.price] || state.price);
+  if (state.cuisine !== 'all') parts.push(state.cuisine);
+  const label = parts.length ? parts.join(' · ') : '';
+  document.getElementById('results-text').textContent = `${visible} spot${visible !== 1 ? 's' : ''} · ${label}`;
   noRes.classList.toggle('visible', visible === 0);
 }
 
 function resetFilters() {
-  state.meal = 'all'; state.price = 'all'; state.cuisine = 'all';
+  state.meal = 'all'; state.price = 'all'; state.cuisine = 'all'; state.neighborhood = 'all';
   document.querySelectorAll('.pill').forEach(p => {
     p.classList.toggle('active', p.dataset.value === 'all');
   });
+  document.querySelectorAll('.nbhd-card').forEach(c => c.classList.remove('active-nbhd'));
+  applyFilters();
+}
+
+function toggleNeighborhood(name, el) {
+  if (state.neighborhood === name) {
+    state.neighborhood = 'all';
+    el.classList.remove('active-nbhd');
+  } else {
+    state.neighborhood = name;
+    document.querySelectorAll('.nbhd-card').forEach(c => c.classList.remove('active-nbhd'));
+    el.classList.add('active-nbhd');
+    // Sync neighborhood pill
+    document.querySelectorAll('.pill[data-filter="neighborhood"]').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === name);
+    });
+  }
   applyFilters();
 }
 
